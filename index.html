@@ -62,20 +62,20 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       <!-- Leaderboard Column -->
-      <section class="lg:col-span-2 bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 flex flex-col space-y-4">
+      <section class="lg:col-span-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <h2 class="text-lg font-semibold">Leaderboard</h2>
           <input
             type="text"
             id="searchInput"
             placeholder="Search player name..."
-            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full sm:w-64"
+            class="bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full sm:w-64"
           />
         </div>
 
-        <div class="overflow-x-auto max-h-[640px] border border-slate-700/60 rounded-lg">
+        <div class="overflow-x-auto max-h-[640px] border border-zinc-800 rounded-lg">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 text-slate-300 select-none">
+            <thead class="bg-zinc-950 sticky top-0 border-b border-zinc-800 text-slate-300 select-none">
               <tr>
                 <th class="p-3">Player</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
@@ -83,13 +83,13 @@
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
               </tr>
             </thead>
-            <tbody id="leaderboardBody" class="divide-y divide-slate-800 text-slate-200"></tbody>
+            <tbody id="leaderboardBody" class="divide-y divide-zinc-800/80 text-slate-200"></tbody>
           </table>
         </div>
       </section>
 
       <!-- Player Detail Column -->
-      <section class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 flex flex-col space-y-4">
+      <section class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <h2 class="text-lg font-semibold">Player Breakdown</h2>
         
         <div id="noSelectionNotice" class="text-sm text-slate-400 my-auto text-center py-12">
@@ -107,9 +107,9 @@
           </div>
 
           <!-- Schedule View Switcher -->
-          <div class="flex items-center justify-between border-b border-slate-700 pb-2 pt-2">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2 pt-2">
             <span class="text-sm font-semibold">Schedule & Log</span>
-            <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-700 text-xs">
+            <div class="inline-flex rounded-lg bg-black p-1 border border-zinc-800 text-xs">
               <button id="tabCalendarBtn" onclick="switchDetailTab('calendar')" class="px-2.5 py-1 rounded-md font-medium bg-sky-500/20 text-sky-400">Calendar</button>
               <button id="tabListBtn" onclick="switchDetailTab('list')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">List</button>
             </div>
@@ -120,8 +120,8 @@
             <div class="flex items-center justify-between">
               <span id="calendarMonthLabel" class="text-sm font-semibold text-slate-200"></span>
               <div class="flex items-center gap-1">
-                <button onclick="changeCalendarMonth(-1)" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-sm px-2">‹</button>
-                <button onclick="changeCalendarMonth(1)" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-sm px-2">›</button>
+                <button onclick="changeCalendarMonth(-1)" class="p-1 rounded hover:bg-zinc-800 text-slate-400 hover:text-slate-200 text-sm px-2">‹</button>
+                <button onclick="changeCalendarMonth(1)" class="p-1 rounded hover:bg-zinc-800 text-slate-400 hover:text-slate-200 text-sm px-2">›</button>
               </div>
             </div>
 
@@ -133,15 +133,15 @@
           </div>
 
           <!-- List View Container (Hidden by default) -->
-          <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-slate-700/60 rounded-lg flex-1">
+          <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-zinc-800 rounded-lg flex-1">
             <table class="w-full text-left text-xs">
-              <thead class="bg-slate-800 text-slate-300 sticky top-0 border-b border-slate-700">
+              <thead class="bg-zinc-950 text-slate-300 sticky top-0 border-b border-zinc-800">
                 <tr>
                   <th class="p-2.5">Date</th>
                   <th class="p-2.5 text-right">Earned</th>
                 </tr>
               </thead>
-              <tbody id="gameLogsBody" class="divide-y divide-slate-800"></tbody>
+              <tbody id="gameLogsBody" class="divide-y divide-zinc-800/80"></tbody>
             </table>
           </div>
         </div>
@@ -336,7 +336,7 @@
         return `
           <tr 
             onclick="selectPlayerById('${p.id}')" 
-            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-sky-500' : ''}"
+            class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-sky-500' : ''}"
           >
             <td class="p-3 font-medium text-slate-100">${p.name}</td>
             <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
@@ -390,7 +390,7 @@
       const logsTbody = document.getElementById('gameLogsBody');
       const reversedLogs = [...p.logs].reverse();
       logsTbody.innerHTML = reversedLogs.map(l => `
-        <tr class="hover:bg-slate-800">
+        <tr class="hover:bg-zinc-800/50">
           <td class="p-2.5 text-slate-300 font-medium">${formatCalendarDateString(l.date)}</td>
           <td class="p-2.5 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
             <span class="inline-flex items-center gap-1 justify-end">
@@ -484,7 +484,7 @@
           `;
         } else {
           grid.innerHTML += `
-            <div class="h-10 rounded-md bg-slate-900/40 border border-slate-800 flex items-start justify-center p-1 text-slate-600">
+            <div class="h-10 rounded-md bg-black/40 border border-zinc-800/80 flex items-start justify-center p-1 text-zinc-700">
               <span class="text-[10px] leading-none">${day}</span>
             </div>
           `;
