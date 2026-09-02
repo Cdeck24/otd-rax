@@ -725,15 +725,15 @@
 
         if (!pageData) break;
 
-        const items = pageData.feedItems || pageData.items || [];
+        const items = pageData.items || pageData.feedItems || [];
         if (!Array.isArray(items) || items.length === 0) {
           hasMore = false;
           break;
         }
 
         items.forEach(item => {
-          const playerId = String(item.entityId || item.entity?.id || item.id);
-          const countVal = item.value ?? item.count ?? item.total ?? item.rankDisplay?.injection?.total?.value;
+          const playerId = String(item.id || item.entityId || item.entity?.id);
+          const countVal = item.value ?? item.count ?? item.total;
           if (playerId && countVal !== undefined) {
             const numVal = typeof countVal === 'number' 
               ? countVal 
@@ -747,7 +747,7 @@
         const lastItem = items[items.length - 1];
         const nextBefore = pageData.nextBefore ?? (lastItem ? lastItem.id : null);
 
-        if (!nextBefore || nextBefore === before) {
+        if (!nextBefore || nextBefore === before || items.length === 0) {
           hasMore = false;
         } else {
           before = nextBefore;
@@ -1408,7 +1408,7 @@
         currentLoadedFile = fileName;
         parseData(data);
       } catch (err) {
-        console.error("Failed to load dataset:", err);
+        console.warn("Dataset load failed or missing file:", err);
         currentLoadedFile = '';
         players = [];
         if (currentMainView === 'recs') {
