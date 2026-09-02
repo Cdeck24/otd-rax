@@ -47,7 +47,7 @@
           </button>
         </nav>
 
-        <!-- Dataset Selectors (Only shown in Explore view) -->
+        <!-- Dataset Selectors (Explore View) -->
         <div id="datasetControls" class="flex items-center gap-3">
           <div class="flex items-center gap-2">
             <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
@@ -58,10 +58,16 @@
             <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
           </div>
         </div>
+
+        <!-- Batch Rarity Tool (Portfolio View) -->
+        <div id="portfolioRarityControls" class="hidden flex items-center gap-2">
+          <label for="batchRaritySelect" class="text-sm text-slate-300 font-medium">Set All Rarities:</label>
+          <select id="batchRaritySelect" onchange="applyBatchRarity(this.value)" class="bg-black border border-zinc-700 text-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+        </div>
       </div>
     </header>
 
-    <!-- Metrics Ribbon (Dynamic for Explore vs. Portfolio) -->
+    <!-- Metrics Ribbon -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
         <div id="metricPoolLabel" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total RAX Pool</div>
@@ -84,7 +90,7 @@
     <!-- Main View: Table + Detail Panel -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Left Column: Explore Leaderboard or Portfolio Table -->
+      <!-- Leaderboard / Portfolio Column -->
       <section class="lg:col-span-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <h2 id="viewHeading" class="text-lg font-semibold">Leaderboard</h2>
@@ -112,7 +118,7 @@
         </div>
       </section>
 
-      <!-- Right Column: Player Detail Panel -->
+      <!-- Player Detail Column -->
       <section class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <h2 class="text-lg font-semibold">Player Breakdown</h2>
         
@@ -131,6 +137,16 @@
               onclick="toggleActivePlayerPortfolio()"
               class="px-3 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5 shrink-0"
             ></button>
+          </div>
+
+          <!-- In-Detail Card Rarity Selector -->
+          <div id="detailRarityWrapper" class="hidden items-center justify-between p-2.5 rounded-lg bg-black/60 border border-zinc-800 text-xs">
+            <span class="text-slate-300 font-medium">Card Rarity Tier:</span>
+            <select
+              id="detailRaritySelect"
+              onchange="onDetailRarityChange(this.value)"
+              class="bg-black border border-zinc-700 font-semibold rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+            ></select>
           </div>
 
           <div class="h-36 w-full">
@@ -181,6 +197,71 @@
   </div>
 
   <script>
+    const RARITIES = [
+      { label: 'General (1x)', value: 1 },
+      { label: 'Common (2x)', value: 2 },
+      { label: 'Uncommon (3x)', value: 3 },
+      { label: 'Rare (4x)', value: 4 },
+      { label: 'Epic (10x)', value: 10 },
+      { label: 'Legendary 1 (25x)', value: 25 },
+      { label: 'Legendary 2 (28x)', value: 28 },
+      { label: 'Legendary 3 (32x)', value: 32 },
+      { label: 'Legendary 4 (35x)', value: 35 },
+      { label: 'Legendary 5 (40x)', value: 40 },
+      { label: 'Mystic 1 (75x)', value: 75 },
+      { label: 'Mystic 2 (79x)', value: 79 },
+      { label: 'Mystic 3 (83x)', value: 83 },
+      { label: 'Mystic 4 (87x)', value: 87 },
+      { label: 'Mystic 5 (91x)', value: 91 },
+      { label: 'Mystic 6 (95x)', value: 95 },
+      { label: 'Mystic 7 (98x)', value: 98 },
+      { label: 'Mystic 8 (101x)', value: 101 },
+      { label: 'Mystic 9 (103x)', value: 103 },
+      { label: 'Mystic 10 (105x)', value: 105 },
+      { label: 'Iconic 1 (150x)', value: 150 },
+      { label: 'Iconic 2 (153x)', value: 153 },
+      { label: 'Iconic 3 (156x)', value: 156 },
+      { label: 'Iconic 4 (159x)', value: 159 },
+      { label: 'Iconic 5 (163x)', value: 163 },
+      { label: 'Iconic 6 (167x)', value: 167 },
+      { label: 'Iconic 7 (171x)', value: 171 },
+      { label: 'Iconic 8 (175x)', value: 175 },
+      { label: 'Iconic 9 (180x)', value: 180 },
+      { label: 'Iconic 10 (185x)', value: 185 },
+      { label: 'Iconic 11 (190x)', value: 190 },
+      { label: 'Iconic 12 (196x)', value: 196 },
+      { label: 'Iconic 13 (202x)', value: 202 },
+      { label: 'Iconic 14 (208x)', value: 208 },
+      { label: 'Iconic 15 (214x)', value: 214 },
+      { label: 'Iconic 16 (220x)', value: 220 },
+      { label: 'Iconic 17 (226x)', value: 226 },
+      { label: 'Iconic 18 (233x)', value: 233 },
+      { label: 'Iconic 19 (240x)', value: 240 },
+      { label: 'Iconic 20 (250x)', value: 250 }
+    ];
+
+    const RARITY_THEMES = {
+      'General':   { text: 'text-gray-400',    bg: 'bg-gray-500/20',    border: 'border-gray-500/40' },
+      'Common':    { text: 'text-blue-400',    bg: 'bg-blue-500/20',    border: 'border-blue-500/40' },
+      'Uncommon':  { text: 'text-green-400',   bg: 'bg-green-500/20',   border: 'border-green-500/40' },
+      'Rare':      { text: 'text-orange-400',  bg: 'bg-orange-500/20',  border: 'border-orange-500/40' },
+      'Epic':      { text: 'text-red-400',     bg: 'bg-red-500/20',     border: 'border-red-500/40' },
+      'Legendary': { text: 'text-purple-400',  bg: 'bg-purple-500/20',  border: 'border-purple-500/40' },
+      'Mystic':    { text: 'text-amber-300',   bg: 'bg-amber-500/20',   border: 'border-amber-400/40' },
+      'Iconic':    { text: 'text-purple-400',  bg: 'bg-purple-500/20',  border: 'border-purple-500/40' }
+    };
+
+    function getRarityInfo(multiplier) {
+      const r = RARITIES.find(item => item.value === Number(multiplier)) || RARITIES[0];
+      const tierName = r.label.split(' ')[0];
+      const theme = RARITY_THEMES[tierName] || RARITY_THEMES['General'];
+      return {
+        ...r,
+        tier: tierName,
+        ...theme
+      };
+    }
+
     const availableDatasets = {
       "MLB": {
         "2025": "data/2025-mlb-data.json",
@@ -227,7 +308,7 @@
     let sortAscending = false;
     let currentCalendarDate = new Date();
     let detailTab = 'calendar';
-    let currentMainView = 'explore'; // 'explore' | 'portfolio'
+    let currentMainView = 'explore';
 
     function getPortfolio() {
       try {
@@ -271,6 +352,7 @@
           name: p.name,
           sport: sport,
           year: year,
+          multiplier: p.multiplier || 1,
           total_earnings: p.total_earnings,
           games_played: p.games_played,
           avg_per_game: p.avg_per_game,
@@ -305,11 +387,64 @@
       toggleCardInPortfolio(activePlayer, sport, year);
     }
 
+    function updateCardRarity(cardKey, multiplier) {
+      const cards = getPortfolio();
+      const card = cards.find(c => c.cardKey === cardKey);
+      if (card) {
+        card.multiplier = Number(multiplier);
+        savePortfolio(cards);
+
+        if (currentMainView === 'portfolio') {
+          renderPortfolioView();
+        }
+
+        if (activePlayer && activePlayer.cardKey === cardKey) {
+          activePlayer.multiplier = Number(multiplier);
+          selectPlayer(activePlayer);
+        }
+      }
+    }
+
+    function applyBatchRarity(multiplier) {
+      const mult = Number(multiplier);
+      const cards = getPortfolio();
+      cards.forEach(c => { c.multiplier = mult; });
+      savePortfolio(cards);
+      updateBatchSelectStyle();
+
+      if (currentMainView === 'portfolio') {
+        renderPortfolioView();
+        if (activePlayer) {
+          const updated = cards.find(c => c.cardKey === activePlayer.cardKey);
+          if (updated) selectPlayer(updated);
+        }
+      }
+    }
+
+    function onDetailRarityChange(val) {
+      if (!activePlayer || !activePlayer.cardKey) return;
+      updateCardRarity(activePlayer.cardKey, val);
+      updateDetailSelectStyle();
+    }
+
+    function updateBatchSelectStyle() {
+      const batchSelect = document.getElementById('batchRaritySelect');
+      const info = getRarityInfo(batchSelect.value);
+      batchSelect.className = `bg-black border ${info.border} ${info.text} rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer`;
+    }
+
+    function updateDetailSelectStyle() {
+      const detailSelect = document.getElementById('detailRaritySelect');
+      const info = getRarityInfo(detailSelect.value);
+      detailSelect.className = `bg-black border ${info.border} ${info.text} font-semibold rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer`;
+    }
+
     function switchMainView(view) {
       currentMainView = view;
       const navExploreBtn = document.getElementById('navExploreBtn');
       const navPortfolioBtn = document.getElementById('navPortfolioBtn');
       const datasetControls = document.getElementById('datasetControls');
+      const portfolioRarityControls = document.getElementById('portfolioRarityControls');
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
@@ -317,6 +452,7 @@
         navExploreBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition";
         navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
         datasetControls.classList.remove('hidden');
+        portfolioRarityControls.classList.add('hidden');
         document.getElementById('viewHeading').textContent = 'Leaderboard';
         document.getElementById('tableHeaderRow').innerHTML = `
           <th class="p-3">Player</th>
@@ -335,9 +471,11 @@
         navPortfolioBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-2";
         navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
         datasetControls.classList.add('hidden');
+        portfolioRarityControls.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Saved Cards Portfolio';
         document.getElementById('tableHeaderRow').innerHTML = `
           <th class="p-3">Player Card</th>
+          <th class="p-3 text-center">Rarity</th>
           <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
           <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
           <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
@@ -348,6 +486,7 @@
         document.getElementById('metricAvgLabel').textContent = 'Avg RAX / Card';
         document.getElementById('metricCountLabel').textContent = 'Cards Held';
         
+        updateBatchSelectStyle();
         renderPortfolioView();
       }
     }
@@ -357,9 +496,8 @@
       const tbody = document.getElementById('leaderboardBody');
       const query = document.getElementById('searchInput').value.toLowerCase();
 
-      // Portfolio Metrics
-      const totalPortfolioRAX = cards.reduce((sum, c) => sum + c.total_earnings, 0);
-      const sortedCards = [...cards].sort((a, b) => b.total_earnings - a.total_earnings);
+      const totalPortfolioRAX = cards.reduce((sum, c) => sum + (c.total_earnings * (c.multiplier || 1)), 0);
+      const sortedCards = [...cards].sort((a, b) => (b.total_earnings * (b.multiplier || 1)) - (a.total_earnings * (a.multiplier || 1)));
       const topAsset = sortedCards[0];
       const avgRAX = cards.length > 0 ? (totalPortfolioRAX / cards.length).toFixed(1) : 0;
 
@@ -369,7 +507,9 @@
       `;
       document.getElementById('statTopEarner').innerHTML = topAsset ? `
         <span class="text-slate-100">${topAsset.name}</span>
-        <span class="text-xs font-semibold text-sky-400 ml-1">(${topAsset.sport} '${String(topAsset.year).slice(-2)})</span>
+        <span class="text-xs font-semibold text-amber-400 ml-1.5 inline-flex items-center gap-1">
+          (${raxIcon('w-3 h-3 text-amber-400')} ${(topAsset.total_earnings * (topAsset.multiplier || 1)).toLocaleString()})
+        </span>
       ` : '—';
       document.getElementById('statAvgPlayer').innerHTML = `
         ${raxIcon('w-5 h-5 text-sky-400')}
@@ -379,17 +519,28 @@
 
       const filtered = cards.filter(c => c.name.toLowerCase().includes(query));
       filtered.sort((a, b) => {
-        const valA = a[sortColumn];
-        const valB = b[sortColumn];
+        const multA = a.multiplier || 1;
+        const multB = b.multiplier || 1;
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (sortColumn === 'total_earnings') {
+          valA = a.total_earnings * multA;
+          valB = b.total_earnings * multB;
+        } else if (sortColumn === 'avg_per_game') {
+          valA = a.avg_per_game * multA;
+          valB = b.avg_per_game * multB;
+        }
+
         return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
       });
 
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="p-8 text-center text-slate-400 text-sm">
+            <td colspan="6" class="p-8 text-center text-slate-400 text-sm">
               ${cards.length === 0 
-                ? 'Your portfolio is currently empty. Browse players in the Explore tab and click "+ Add to Portfolio" to save your cards.' 
+                ? 'Your portfolio is currently empty. Browse players in the Explore tab and click the bookmark star to save your cards.' 
                 : 'No saved cards match your search.'}
             </td>
           </tr>
@@ -400,6 +551,11 @@
 
       tbody.innerHTML = filtered.map(c => {
         const isSelected = activePlayer && activePlayer.cardKey === c.cardKey;
+        const mult = c.multiplier || 1;
+        const effectiveTotal = c.total_earnings * mult;
+        const effectiveAvg = c.avg_per_game * mult;
+        const rInfo = getRarityInfo(mult);
+
         return `
           <tr 
             onclick="selectPortfolioCard('${c.cardKey}')" 
@@ -412,17 +568,29 @@
                 <span>${c.year} Season</span>
               </div>
             </td>
+            <td class="p-3 text-center" onclick="event.stopPropagation()">
+              <select
+                onchange="updateCardRarity('${c.cardKey}', this.value)"
+                class="bg-black border ${rInfo.border} ${rInfo.text} rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+              >
+                ${RARITIES.map(r => `
+                  <option value="${r.value}" class="bg-zinc-900 text-slate-200" ${mult === r.value ? 'selected' : ''}>
+                    ${r.label}
+                  </option>
+                `).join('')}
+              </select>
+            </td>
             <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
               <span class="inline-flex items-center gap-1 justify-end">
                 ${raxIcon('w-3.5 h-3.5 text-sky-400')}
-                <span>${c.total_earnings.toLocaleString()}</span>
+                <span>${effectiveTotal.toLocaleString()}</span>
               </span>
             </td>
             <td class="p-3 text-right text-slate-300">${c.games_played}</td>
             <td class="p-3 text-right text-slate-400 whitespace-nowrap">
               <span class="inline-flex items-center gap-1 justify-end">
                 ${raxIcon('w-3 h-3 text-slate-500')}
-                <span>${c.avg_per_game.toFixed(2)}</span>
+                <span>${effectiveAvg.toFixed(2)}</span>
               </span>
             </td>
             <td class="p-3 text-center" onclick="event.stopPropagation()">
@@ -461,6 +629,13 @@
       });
 
       document.getElementById('yearSelect').addEventListener('change', triggerDatasetLoad);
+
+      const batchSelect = document.getElementById('batchRaritySelect');
+      batchSelect.innerHTML = RARITIES.map(r => `<option value="${r.value}" class="bg-zinc-900 text-slate-200">${r.label}</option>`).join('');
+      updateBatchSelectStyle();
+
+      const detailSelect = document.getElementById('detailRaritySelect');
+      detailSelect.innerHTML = RARITIES.map(r => `<option value="${r.value}" class="bg-zinc-900 text-slate-200">${r.label}</option>`).join('');
     }
 
     function updateYearDropdown(selectedSport) {
@@ -533,6 +708,7 @@
         return {
           id: id,
           name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+          multiplier: 1,
           total_earnings: total,
           games_played: games,
           avg_per_game: avg,
@@ -681,21 +857,40 @@
       document.getElementById('noSelectionNotice').classList.add('hidden');
       document.getElementById('playerDetailContent').classList.remove('hidden');
 
+      const mult = (currentMainView === 'portfolio' || p.cardKey) ? (p.multiplier || 1) : 1;
+      const effectiveTotal = p.total_earnings * mult;
+      const rInfo = getRarityInfo(mult);
+
       const sportTag = p.sport ? `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold font-mono">${p.sport} '${String(p.year).slice(-2)}</span> • ` : '';
+      const multBadge = (currentMainView === 'portfolio' || p.cardKey)
+        ? `<span class="px-2 py-0.5 rounded border ${rInfo.bg} ${rInfo.border} ${rInfo.text} font-bold text-[11px]">${rInfo.label}</span> • `
+        : '';
 
       document.getElementById('detailPlayerName').textContent = p.name;
       document.getElementById('detailPlayerMeta').innerHTML = `
         ${sportTag}
-        <span>${p.games_played} Games Logged</span>
+        ${multBadge}
+        <span>${p.games_played} Games</span>
         <span>•</span>
         <span class="inline-flex items-center gap-1 text-sky-400 font-semibold">
-          ${raxIcon('w-3.5 h-3.5 text-sky-400')} ${p.total_earnings.toLocaleString()} Total
+          ${raxIcon('w-3.5 h-3.5 text-sky-400')} ${effectiveTotal.toLocaleString()} Total
         </span>
       `;
 
       updateDetailPortfolioButton();
 
-      // Render formatted calendar date list
+      const detailRarityWrapper = document.getElementById('detailRarityWrapper');
+      const detailRaritySelect = document.getElementById('detailRaritySelect');
+      if (currentMainView === 'portfolio' && p.cardKey) {
+        detailRarityWrapper.classList.remove('hidden');
+        detailRarityWrapper.classList.add('flex');
+        detailRaritySelect.value = mult;
+        updateDetailSelectStyle();
+      } else {
+        detailRarityWrapper.classList.add('hidden');
+        detailRarityWrapper.classList.remove('flex');
+      }
+
       const logsTbody = document.getElementById('gameLogsBody');
       const reversedLogs = [...p.logs].reverse();
       logsTbody.innerHTML = reversedLogs.map(l => `
@@ -704,13 +899,12 @@
           <td class="p-2.5 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
             <span class="inline-flex items-center gap-1 justify-end">
               ${raxIcon('w-3 h-3 text-sky-400')}
-              <span>${l.earnings}</span>
+              <span>${l.earnings * mult}</span>
             </span>
           </td>
         </tr>
       `).join('');
 
-      // Set calendar default view to last played game date
       if (p.logs.length > 0) {
         const lastLog = p.logs[p.logs.length - 1];
         const [y, m, d] = lastLog.date.split('-').map(Number);
@@ -718,7 +912,7 @@
       }
 
       renderCalendarView();
-      renderChart(p.logs);
+      renderChart(p.logs, mult);
 
       if (currentMainView === 'explore') {
         renderLeaderboard();
@@ -753,6 +947,7 @@
     function renderCalendarView() {
       if (!activePlayer) return;
 
+      const mult = (currentMainView === 'portfolio' || activePlayer.cardKey) ? (activePlayer.multiplier || 1) : 1;
       const year = currentCalendarDate.getFullYear();
       const month = currentCalendarDate.getMonth();
 
@@ -763,7 +958,7 @@
 
       const dayEarningsMap = {};
       activePlayer.logs.forEach(l => {
-        dayEarningsMap[l.date] = (dayEarningsMap[l.date] || 0) + l.earnings;
+        dayEarningsMap[l.date] = (dayEarningsMap[l.date] || 0) + (l.earnings * mult);
       });
 
       const firstDayIndex = new Date(year, month, 1).getDay();
@@ -801,7 +996,7 @@
       }
     }
 
-    function renderChart(logs) {
+    function renderChart(logs, mult = 1) {
       const ctx = document.getElementById('earningsChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
@@ -812,7 +1007,7 @@
       });
 
       const cumulative = logs.map(l => {
-        runningTotal += l.earnings;
+        runningTotal += (l.earnings * mult);
         return runningTotal;
       });
 
@@ -871,7 +1066,6 @@
       }
     });
 
-    // Initialize application
     updatePortfolioBadge();
     initDropdowns();
     triggerDatasetLoad();
