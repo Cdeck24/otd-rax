@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Player Earnings Explorer</title>
+  <title>Player RAX Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -12,13 +12,23 @@
 
     <!-- Header & Controls -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">Player Earnings Explorer</h1>
-        <p class="text-slate-400 text-sm mt-1">Multi-sport performance compensation and game logs</p>
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
+          <svg viewBox="0 0 512 512" class="w-8 h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
+            <path d="M128.1,141.1h356.8C442.8,57.4,356.1,0,256,0C192,0,133.5,23.5,88.6,62.3L128.1,141.1z"></path>
+            <polygon points="355.3,193.2 154.2,193.2 254.7,394"></polygon>
+            <path d="M413.6,193.2L253.9,512c0.7,0,1.4,0,2.1,0c141.4,0,256-114.6,256-256c0-21.7-2.7-42.7-7.8-62.8H413.6z"></path>
+            <path d="M225.6,452.1L50.7,103C18.9,145.7,0,198.6,0,256c0,121.7,85,223.6,198.8,249.6L225.6,452.1z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Player RAX Explorer</h1>
+          <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and game logs</p>
+        </div>
       </div>
       <div class="flex items-center gap-3">
         <label for="datasetSelect" class="text-sm text-slate-300 font-medium">Dataset:</label>
-        <select id="datasetSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <select id="datasetSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
           <option value="data/2022-mlb-data.json">2022 MLB</option>
           <option value="data/2024-wnba-data.json">2024 WNBA</option>
           <option value="data/2025-wnba-data.json">2025 WNBA</option>
@@ -29,16 +39,16 @@
     <!-- Metrics Ribbon -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Pool</div>
-        <div id="statTotalPool" class="text-2xl font-extrabold text-emerald-400 mt-1">$0</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total RAX Pool</div>
+        <div id="statTotalPool" class="text-2xl font-extrabold text-amber-400 mt-1 flex items-center gap-1.5">—</div>
       </div>
       <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
         <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Top Earner</div>
         <div id="statTopEarner" class="text-xl font-bold text-slate-100 mt-1 truncate">—</div>
       </div>
       <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Avg / Player</div>
-        <div id="statAvgPlayer" class="text-2xl font-extrabold text-slate-100 mt-1">$0</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Avg RAX / Player</div>
+        <div id="statAvgPlayer" class="text-2xl font-extrabold text-slate-100 mt-1 flex items-center gap-1.5">—</div>
       </div>
       <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
         <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Events Tracked</div>
@@ -57,7 +67,7 @@
             type="text"
             id="searchInput"
             placeholder="Search player name..."
-            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64"
+            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64"
           />
         </div>
 
@@ -66,7 +76,7 @@
             <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 text-slate-300 select-none">
               <tr>
                 <th class="p-3">Player</th>
-                <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total Earnings ▾</th>
+                <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
               </tr>
@@ -81,13 +91,13 @@
         <h2 class="text-lg font-semibold">Player Breakdown</h2>
         
         <div id="noSelectionNotice" class="text-sm text-slate-400 my-auto text-center py-12">
-          Click any player row in the leaderboard to display their earnings trend and game logs.
+          Click any player row in the leaderboard to display their RAX trend and game logs.
         </div>
 
         <div id="playerDetailContent" class="space-y-4 hidden flex-1 flex flex-col">
           <div>
             <div id="detailPlayerName" class="text-2xl font-bold text-white"></div>
-            <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-0.5"></div>
+            <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap"></div>
           </div>
 
           <div class="h-44 w-full">
@@ -101,7 +111,7 @@
                 <tr>
                   <th class="p-2">Date</th>
                   <th class="p-2">Event ID</th>
-                  <th class="p-2 text-right">Earned</th>
+                  <th class="p-2 text-right">RAX</th>
                 </tr>
               </thead>
               <tbody id="gameLogsBody" class="divide-y divide-slate-800"></tbody>
@@ -119,6 +129,17 @@
     let sortColumn = 'total_earnings';
     let sortAscending = false;
 
+    function raxIcon(className = "w-3.5 h-3.5") {
+      return `
+        <svg viewBox="0 0 512 512" class="inline-block fill-current ${className}" xmlns="http://www.w3.org/2000/svg">
+          <path d="M128.1,141.1h356.8C442.8,57.4,356.1,0,256,0C192,0,133.5,23.5,88.6,62.3L128.1,141.1z"></path>
+          <polygon points="355.3,193.2 154.2,193.2 254.7,394"></polygon>
+          <path d="M413.6,193.2L253.9,512c0.7,0,1.4,0,2.1,0c141.4,0,256-114.6,256-256c0-21.7-2.7-42.7-7.8-62.8H413.6z"></path>
+          <path d="M225.6,452.1L50.7,103C18.9,145.7,0,198.6,0,256c0,121.7,85,223.6,198.8,249.6L225.6,452.1z"></path>
+        </svg>
+      `;
+    }
+
     async function loadDataset(fileName) {
       try {
         const res = await fetch(fileName);
@@ -127,7 +148,7 @@
         parseData(data);
       } catch (err) {
         console.error("Failed to load dataset:", err);
-        alert(`Could not load ${fileName}. Ensure the file exists in the directory.`);
+        alert(`Could not load ${fileName}. Check that the data folder and file path are correct.`);
       }
     }
 
@@ -175,9 +196,23 @@
       const avgEarnings = players.length > 0 ? (totalPool / players.length).toFixed(1) : 0;
       const totalEvents = players.reduce((sum, p) => sum + p.games_played, 0);
 
-      document.getElementById('statTotalPool').textContent = `$${totalPool.toLocaleString()}`;
-      document.getElementById('statTopEarner').textContent = topEarner ? `${topEarner.name} ($${topEarner.total_earnings.toLocaleString()})` : '—';
-      document.getElementById('statAvgPlayer').textContent = `$${Number(avgEarnings).toLocaleString()}`;
+      document.getElementById('statTotalPool').innerHTML = `
+        ${raxIcon('w-6 h-6 text-amber-400')}
+        <span>${totalPool.toLocaleString()}</span>
+      `;
+
+      document.getElementById('statTopEarner').innerHTML = topEarner ? `
+        <span class="text-slate-100">${topEarner.name}</span>
+        <span class="text-sm font-semibold text-amber-400 inline-flex items-center gap-1 ml-1.5">
+          (${raxIcon('w-3.5 h-3.5 text-amber-400')} ${topEarner.total_earnings.toLocaleString()})
+        </span>
+      ` : '—';
+
+      document.getElementById('statAvgPlayer').innerHTML = `
+        ${raxIcon('w-5 h-5 text-amber-400')}
+        <span>${Number(avgEarnings).toLocaleString()}</span>
+      `;
+
       document.getElementById('statTotalEvents').textContent = totalEvents.toLocaleString();
     }
 
@@ -198,12 +233,22 @@
         return `
           <tr 
             onclick="selectPlayerById('${p.id}')" 
-            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-emerald-500' : ''}"
+            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-amber-500' : ''}"
           >
             <td class="p-3 font-medium text-slate-100">${p.name}</td>
-            <td class="p-3 text-right font-mono text-emerald-400 font-semibold">$${p.total_earnings.toLocaleString()}</td>
+            <td class="p-3 text-right font-mono text-amber-400 font-semibold whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3.5 h-3.5 text-amber-400')}
+                <span>${p.total_earnings.toLocaleString()}</span>
+              </span>
+            </td>
             <td class="p-3 text-right text-slate-300">${p.games_played}</td>
-            <td class="p-3 text-right text-slate-400">$${p.avg_per_game.toFixed(2)}</td>
+            <td class="p-3 text-right text-slate-400 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-slate-500')}
+                <span>${p.avg_per_game.toFixed(2)}</span>
+              </span>
+            </td>
           </tr>
         `;
       }).join('');
@@ -230,7 +275,15 @@
       document.getElementById('playerDetailContent').classList.remove('hidden');
 
       document.getElementById('detailPlayerName').textContent = p.name;
-      document.getElementById('detailPlayerMeta').textContent = `ID: ${p.id} • ${p.games_played} Games Logged • $${p.total_earnings.toLocaleString()} Total`;
+      document.getElementById('detailPlayerMeta').innerHTML = `
+        <span>ID: ${p.id}</span>
+        <span>•</span>
+        <span>${p.games_played} Games Logged</span>
+        <span>•</span>
+        <span class="inline-flex items-center gap-1 text-amber-400 font-semibold">
+          ${raxIcon('w-3.5 h-3.5 text-amber-400')} ${p.total_earnings.toLocaleString()} Total
+        </span>
+      `;
 
       const logsTbody = document.getElementById('gameLogsBody');
       const reversedLogs = [...p.logs].reverse();
@@ -238,7 +291,12 @@
         <tr class="hover:bg-slate-800">
           <td class="p-2 text-slate-300">${l.date}</td>
           <td class="p-2 font-mono text-slate-400">${l.id}</td>
-          <td class="p-2 text-right font-mono text-emerald-400 font-semibold">$${l.earnings}</td>
+          <td class="p-2 text-right font-mono text-amber-400 font-semibold whitespace-nowrap">
+            <span class="inline-flex items-center gap-1 justify-end">
+              ${raxIcon('w-3 h-3 text-amber-400')}
+              <span>${l.earnings}</span>
+            </span>
+          </td>
         </tr>
       `).join('');
 
@@ -262,10 +320,10 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Cumulative ($)',
+            label: 'Cumulative RAX',
             data: cumulative,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
             fill: true,
             tension: 0.25,
             borderWidth: 2,
@@ -275,12 +333,23 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.y.toLocaleString()} RAX`
+              }
+            }
+          },
           scales: {
             x: { display: false },
             y: {
               grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
+              ticks: { 
+                color: '#94a3b8', 
+                font: { size: 10 },
+                callback: (value) => `${value}`
+              }
             }
           }
         }
