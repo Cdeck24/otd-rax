@@ -26,34 +26,57 @@
           <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and calendar schedule</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 flex-wrap">
-        <div class="flex items-center gap-2">
-          <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
-          <select id="sportSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
-        </div>
-        <div class="flex items-center gap-2">
-          <label for="yearSelect" class="text-sm text-slate-300 font-medium">Year:</label>
-          <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+
+      <div class="flex items-center gap-4 flex-wrap">
+        <!-- Main Navigation Tabs -->
+        <nav class="inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-sm font-medium">
+          <button
+            id="navExploreBtn"
+            onclick="switchMainView('explore')"
+            class="px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition"
+          >
+            Explore
+          </button>
+          <button
+            id="navPortfolioBtn"
+            onclick="switchMainView('portfolio')"
+            class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2"
+          >
+            <span>My Portfolio</span>
+            <span id="portfolioCountBadge" class="px-1.5 py-0.5 text-xs rounded-full bg-zinc-800 text-slate-300 font-mono">0</span>
+          </button>
+        </nav>
+
+        <!-- Dataset Selectors (Only shown in Explore view) -->
+        <div id="datasetControls" class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
+            <select id="sportSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="yearSelect" class="text-sm text-slate-300 font-medium">Year:</label>
+            <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- Metrics Ribbon -->
+    <!-- Metrics Ribbon (Dynamic for Explore vs. Portfolio) -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total RAX Pool</div>
+        <div id="metricPoolLabel" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total RAX Pool</div>
         <div id="statTotalPool" class="text-2xl font-extrabold text-sky-400 mt-1 flex items-center gap-1.5">—</div>
       </div>
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Top Earner</div>
+        <div id="metricTopLabel" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Top Earner</div>
         <div id="statTopEarner" class="text-xl font-bold text-slate-100 mt-1 truncate">—</div>
       </div>
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Avg RAX / Player</div>
+        <div id="metricAvgLabel" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Avg RAX / Player</div>
         <div id="statAvgPlayer" class="text-2xl font-extrabold text-slate-100 mt-1 flex items-center gap-1.5">—</div>
       </div>
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
-        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Events Tracked</div>
+        <div id="metricCountLabel" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Events Tracked</div>
         <div id="statTotalEvents" class="text-2xl font-extrabold text-slate-100 mt-1">0</div>
       </div>
     </section>
@@ -61,10 +84,10 @@
     <!-- Main View: Table + Detail Panel -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Leaderboard Column -->
+      <!-- Left Column: Explore Leaderboard or Portfolio Table -->
       <section class="lg:col-span-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-          <h2 class="text-lg font-semibold">Leaderboard</h2>
+          <h2 id="viewHeading" class="text-lg font-semibold">Leaderboard</h2>
           <input
             type="text"
             id="searchInput"
@@ -76,11 +99,12 @@
         <div class="overflow-x-auto max-h-[640px] border border-zinc-800 rounded-lg">
           <table class="w-full text-left text-sm">
             <thead class="bg-zinc-950 sticky top-0 border-b border-zinc-800 text-slate-300 select-none">
-              <tr>
+              <tr id="tableHeaderRow">
                 <th class="p-3">Player</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
                 <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
+                <th class="p-3 text-center">Portfolio</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody" class="divide-y divide-zinc-800/80 text-slate-200"></tbody>
@@ -88,18 +112,25 @@
         </div>
       </section>
 
-      <!-- Player Detail Column -->
+      <!-- Right Column: Player Detail Panel -->
       <section class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <h2 class="text-lg font-semibold">Player Breakdown</h2>
         
         <div id="noSelectionNotice" class="text-sm text-slate-400 my-auto text-center py-12">
-          Click any player row in the leaderboard to display their earnings calendar and logs.
+          Click any player row to display their earnings calendar and logs.
         </div>
 
         <div id="playerDetailContent" class="space-y-4 hidden flex-1 flex flex-col">
-          <div>
-            <div id="detailPlayerName" class="text-2xl font-bold text-white"></div>
-            <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap"></div>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div id="detailPlayerName" class="text-2xl font-bold text-white"></div>
+              <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap"></div>
+            </div>
+            <button
+              id="detailPortfolioBtn"
+              onclick="toggleActivePlayerPortfolio()"
+              class="px-3 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5 shrink-0"
+            ></button>
           </div>
 
           <div class="h-36 w-full">
@@ -132,7 +163,7 @@
             <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
           </div>
 
-          <!-- List View Container (Hidden by default) -->
+          <!-- List View Container -->
           <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-zinc-800 rounded-lg flex-1">
             <table class="w-full text-left text-xs">
               <thead class="bg-zinc-950 text-slate-300 sticky top-0 border-b border-zinc-800">
@@ -196,6 +227,226 @@
     let sortAscending = false;
     let currentCalendarDate = new Date();
     let detailTab = 'calendar';
+    let currentMainView = 'explore'; // 'explore' | 'portfolio'
+
+    function getPortfolio() {
+      try {
+        return JSON.parse(localStorage.getItem('rax_saved_cards') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function savePortfolio(cards) {
+      localStorage.setItem('rax_saved_cards', JSON.stringify(cards));
+      updatePortfolioBadge();
+    }
+
+    function updatePortfolioBadge() {
+      const count = getPortfolio().length;
+      document.getElementById('portfolioCountBadge').textContent = count;
+    }
+
+    function makeCardKey(pId, sport, year) {
+      return `${sport}_${year}_${pId}`;
+    }
+
+    function isCardSaved(pId, sport, year) {
+      const cards = getPortfolio();
+      const targetKey = makeCardKey(pId, sport, year);
+      return cards.some(c => c.cardKey === targetKey);
+    }
+
+    function toggleCardInPortfolio(p, sport, year) {
+      const cards = getPortfolio();
+      const key = makeCardKey(p.id, sport, year);
+      const index = cards.findIndex(c => c.cardKey === key);
+
+      if (index >= 0) {
+        cards.splice(index, 1);
+      } else {
+        cards.push({
+          cardKey: key,
+          id: p.id,
+          name: p.name,
+          sport: sport,
+          year: year,
+          total_earnings: p.total_earnings,
+          games_played: p.games_played,
+          avg_per_game: p.avg_per_game,
+          logs: p.logs
+        });
+      }
+
+      savePortfolio(cards);
+
+      if (currentMainView === 'portfolio') {
+        renderPortfolioView();
+        if (activePlayer && activePlayer.cardKey === key && index >= 0) {
+          const remaining = getPortfolio();
+          if (remaining.length > 0) {
+            selectPlayer(remaining[0]);
+          } else {
+            resetDetailView();
+          }
+        }
+      } else {
+        renderLeaderboard();
+        if (activePlayer && activePlayer.id === p.id) {
+          updateDetailPortfolioButton();
+        }
+      }
+    }
+
+    function toggleActivePlayerPortfolio() {
+      if (!activePlayer) return;
+      const sport = activePlayer.sport || document.getElementById('sportSelect').value;
+      const year = activePlayer.year || document.getElementById('yearSelect').value;
+      toggleCardInPortfolio(activePlayer, sport, year);
+    }
+
+    function switchMainView(view) {
+      currentMainView = view;
+      const navExploreBtn = document.getElementById('navExploreBtn');
+      const navPortfolioBtn = document.getElementById('navPortfolioBtn');
+      const datasetControls = document.getElementById('datasetControls');
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = '';
+
+      if (view === 'explore') {
+        navExploreBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition";
+        navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
+        datasetControls.classList.remove('hidden');
+        document.getElementById('viewHeading').textContent = 'Leaderboard';
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th class="p-3">Player</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
+          <th class="p-3 text-center">Portfolio</th>
+        `;
+        document.getElementById('metricPoolLabel').textContent = 'Total RAX Pool';
+        document.getElementById('metricTopLabel').textContent = 'Top Earner';
+        document.getElementById('metricAvgLabel').textContent = 'Avg RAX / Player';
+        document.getElementById('metricCountLabel').textContent = 'Events Tracked';
+        
+        triggerDatasetLoad();
+      } else {
+        navPortfolioBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-2";
+        navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
+        datasetControls.classList.add('hidden');
+        document.getElementById('viewHeading').textContent = 'Saved Cards Portfolio';
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th class="p-3">Player Card</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
+          <th class="p-3 text-center">Action</th>
+        `;
+        document.getElementById('metricPoolLabel').textContent = 'Portfolio Value';
+        document.getElementById('metricTopLabel').textContent = 'Top Asset';
+        document.getElementById('metricAvgLabel').textContent = 'Avg RAX / Card';
+        document.getElementById('metricCountLabel').textContent = 'Cards Held';
+        
+        renderPortfolioView();
+      }
+    }
+
+    function renderPortfolioView() {
+      const cards = getPortfolio();
+      const tbody = document.getElementById('leaderboardBody');
+      const query = document.getElementById('searchInput').value.toLowerCase();
+
+      // Portfolio Metrics
+      const totalPortfolioRAX = cards.reduce((sum, c) => sum + c.total_earnings, 0);
+      const sortedCards = [...cards].sort((a, b) => b.total_earnings - a.total_earnings);
+      const topAsset = sortedCards[0];
+      const avgRAX = cards.length > 0 ? (totalPortfolioRAX / cards.length).toFixed(1) : 0;
+
+      document.getElementById('statTotalPool').innerHTML = `
+        ${raxIcon('w-6 h-6 text-sky-400')}
+        <span>${totalPortfolioRAX.toLocaleString()}</span>
+      `;
+      document.getElementById('statTopEarner').innerHTML = topAsset ? `
+        <span class="text-slate-100">${topAsset.name}</span>
+        <span class="text-xs font-semibold text-sky-400 ml-1">(${topAsset.sport} '${String(topAsset.year).slice(-2)})</span>
+      ` : '—';
+      document.getElementById('statAvgPlayer').innerHTML = `
+        ${raxIcon('w-5 h-5 text-sky-400')}
+        <span>${Number(avgRAX).toLocaleString()}</span>
+      `;
+      document.getElementById('statTotalEvents').textContent = cards.length;
+
+      const filtered = cards.filter(c => c.name.toLowerCase().includes(query));
+      filtered.sort((a, b) => {
+        const valA = a[sortColumn];
+        const valB = b[sortColumn];
+        return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-8 text-center text-slate-400 text-sm">
+              ${cards.length === 0 
+                ? 'Your portfolio is currently empty. Browse players in the Explore tab and click "+ Add to Portfolio" to save your cards.' 
+                : 'No saved cards match your search.'}
+            </td>
+          </tr>
+        `;
+        if (cards.length === 0) resetDetailView();
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => {
+        const isSelected = activePlayer && activePlayer.cardKey === c.cardKey;
+        return `
+          <tr 
+            onclick="selectPortfolioCard('${c.cardKey}')" 
+            class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-sky-500' : ''}"
+          >
+            <td class="p-3">
+              <div class="font-medium text-slate-100">${c.name}</div>
+              <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${c.sport}</span>
+                <span>${c.year} Season</span>
+              </div>
+            </td>
+            <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3.5 h-3.5 text-sky-400')}
+                <span>${c.total_earnings.toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-3 text-right text-slate-300">${c.games_played}</td>
+            <td class="p-3 text-right text-slate-400 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-slate-500')}
+                <span>${c.avg_per_game.toFixed(2)}</span>
+              </span>
+            </td>
+            <td class="p-3 text-center" onclick="event.stopPropagation()">
+              <button 
+                onclick="toggleCardInPortfolio(${JSON.stringify(c).replace(/"/g, '&quot;')}, '${c.sport}', '${c.year}')" 
+                class="px-2.5 py-1 text-xs rounded-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (!activePlayer || !cards.some(c => c.cardKey === activePlayer.cardKey)) {
+        selectPlayer(filtered[0]);
+      }
+    }
+
+    function selectPortfolioCard(cardKey) {
+      const cards = getPortfolio();
+      const card = cards.find(c => c.cardKey === cardKey);
+      if (card) selectPlayer(card);
+    }
 
     function initDropdowns() {
       const sportSelect = document.getElementById('sportSelect');
@@ -219,6 +470,7 @@
     }
 
     function triggerDatasetLoad() {
+      if (currentMainView !== 'explore') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
       const filePath = availableDatasets[sport]?.[year];
@@ -328,6 +580,8 @@
     function renderLeaderboard() {
       const tbody = document.getElementById('leaderboardBody');
       const query = document.getElementById('searchInput').value.toLowerCase();
+      const currentSport = document.getElementById('sportSelect').value;
+      const currentYear = document.getElementById('yearSelect').value;
 
       const filtered = players.filter(p => p.name.toLowerCase().includes(query));
 
@@ -339,6 +593,8 @@
 
       tbody.innerHTML = filtered.map(p => {
         const isSelected = activePlayer && activePlayer.id === p.id;
+        const inPortfolio = isCardSaved(p.id, currentSport, currentYear);
+
         return `
           <tr 
             onclick="selectPlayerById('${p.id}')" 
@@ -358,6 +614,21 @@
                 <span>${p.avg_per_game.toFixed(2)}</span>
               </span>
             </td>
+            <td class="p-3 text-center" onclick="event.stopPropagation()">
+              <button 
+                onclick="toggleCardInPortfolio(${JSON.stringify(p).replace(/"/g, '&quot;')}, '${currentSport}', '${currentYear}')" 
+                class="p-1.5 rounded-lg border transition ${inPortfolio 
+                  ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 hover:bg-sky-500/30' 
+                  : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
+                title="${inPortfolio ? 'Remove from portfolio' : 'Save to portfolio'}"
+              >
+                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
+                  ${inPortfolio 
+                    ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' 
+                    : '<path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>'}
+                </svg>
+              </button>
+            </td>
           </tr>
         `;
       }).join('');
@@ -370,7 +641,12 @@
         sortColumn = column;
         sortAscending = false;
       }
-      renderLeaderboard();
+      
+      if (currentMainView === 'explore') {
+        renderLeaderboard();
+      } else {
+        renderPortfolioView();
+      }
     }
 
     function selectPlayerById(id) {
@@ -378,19 +654,46 @@
       if (p) selectPlayer(p);
     }
 
+    function updateDetailPortfolioButton() {
+      if (!activePlayer) return;
+      const btn = document.getElementById('detailPortfolioBtn');
+      const sport = activePlayer.sport || document.getElementById('sportSelect').value;
+      const year = activePlayer.year || document.getElementById('yearSelect').value;
+      const saved = isCardSaved(activePlayer.id, sport, year);
+
+      if (saved) {
+        btn.className = "px-3 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5 bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20";
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <span>Remove Card</span>
+        `;
+      } else {
+        btn.className = "px-3 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5 bg-sky-500/20 text-sky-400 border-sky-500/30 hover:bg-sky-500/30";
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span>Save Card</span>
+        `;
+      }
+    }
+
     function selectPlayer(p) {
       activePlayer = p;
       document.getElementById('noSelectionNotice').classList.add('hidden');
       document.getElementById('playerDetailContent').classList.remove('hidden');
 
+      const sportTag = p.sport ? `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold font-mono">${p.sport} '${String(p.year).slice(-2)}</span> • ` : '';
+
       document.getElementById('detailPlayerName').textContent = p.name;
       document.getElementById('detailPlayerMeta').innerHTML = `
+        ${sportTag}
         <span>${p.games_played} Games Logged</span>
         <span>•</span>
         <span class="inline-flex items-center gap-1 text-sky-400 font-semibold">
           ${raxIcon('w-3.5 h-3.5 text-sky-400')} ${p.total_earnings.toLocaleString()} Total
         </span>
       `;
+
+      updateDetailPortfolioButton();
 
       // Render formatted calendar date list
       const logsTbody = document.getElementById('gameLogsBody');
@@ -416,7 +719,10 @@
 
       renderCalendarView();
       renderChart(p.logs);
-      renderLeaderboard();
+
+      if (currentMainView === 'explore') {
+        renderLeaderboard();
+      }
     }
 
     function switchDetailTab(tab) {
@@ -455,7 +761,6 @@
         year: 'numeric'
       });
 
-      // Build day-to-earnings lookup map (sums double-headers if on same date)
       const dayEarningsMap = {};
       activePlayer.logs.forEach(l => {
         dayEarningsMap[l.date] = (dayEarningsMap[l.date] || 0) + l.earnings;
@@ -466,12 +771,10 @@
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
 
-      // Blank filler cells before start of month
       for (let i = 0; i < firstDayIndex; i++) {
         grid.innerHTML += `<div class="h-10 rounded border border-transparent"></div>`;
       }
 
-      // Day cells
       for (let day = 1; day <= totalDays; day++) {
         const monthStr = String(month + 1).padStart(2, '0');
         const dayStr = String(day).padStart(2, '0');
@@ -560,9 +863,16 @@
       if (chartInstance) chartInstance.destroy();
     }
 
-    document.getElementById('searchInput').addEventListener('input', renderLeaderboard);
+    document.getElementById('searchInput').addEventListener('input', () => {
+      if (currentMainView === 'explore') {
+        renderLeaderboard();
+      } else {
+        renderPortfolioView();
+      }
+    });
 
-    // Initialize dropdowns and load first dataset
+    // Initialize application
+    updatePortfolioBadge();
     initDropdowns();
     triggerDatasetLoad();
   </script>
