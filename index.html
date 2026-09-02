@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Earnings Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header & Controls -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Player Earnings Explorer</h1>
+        <p class="text-slate-400 text-sm mt-1">Multi-sport performance compensation and game logs</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <label for="datasetSelect" class="text-sm text-slate-300 font-medium">Dataset:</label>
+        <select id="datasetSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="2022-mlb-data.json">2022 MLB</option>
+          <option value="2024-wnba-data.json">2024 WNBA</option>
+          <option value="2025-wnba-data.json">2025 WNBA</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Metrics Ribbon -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Pool</div>
+        <div id="statTotalPool" class="text-2xl font-extrabold text-emerald-400 mt-1">$0</div>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Top Earner</div>
+        <div id="statTopEarner" class="text-xl font-bold text-slate-100 mt-1 truncate">—</div>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Avg / Player</div>
+        <div id="statAvgPlayer" class="text-2xl font-extrabold text-slate-100 mt-1">$0</div>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4">
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Events Tracked</div>
+        <div id="statTotalEvents" class="text-2xl font-extrabold text-slate-100 mt-1">0</div>
+      </div>
+    </section>
+
+    <!-- Main View: Table + Detail Panel -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Leaderboard Column -->
+      <section class="lg:col-span-2 bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 flex flex-col space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <h2 class="text-lg font-semibold">Leaderboard</h2>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search player name..."
+            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64"
+          />
+        </div>
+
+        <div class="overflow-x-auto max-h-[600px] border border-slate-700/60 rounded-lg">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 text-slate-300 select-none">
+              <tr>
+                <th class="p-3">Player</th>
+                <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total Earnings ▾</th>
+                <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
+                <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody" class="divide-y divide-slate-800 text-slate-200"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Player Detail Column -->
+      <section class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 flex flex-col space-y-4">
+        <h2 class="text-lg font-semibold">Player Breakdown</h2>
+        
+        <div id="noSelectionNotice" class="text-sm text-slate-400 my-auto text-center py-12">
+          Click any player row in the leaderboard to display their earnings trend and game logs.
+        </div>
+
+        <div id="playerDetailContent" class="space-y-4 hidden flex-1 flex flex-col">
+          <div>
+            <div id="detailPlayerName" class="text-2xl font-bold text-white"></div>
+            <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-0.5"></div>
+          </div>
+
+          <div class="h-44 w-full">
+            <canvas id="earningsChart"></canvas>
+          </div>
+
+          <div class="text-sm font-semibold pt-2">Individual Game Logs</div>
+          <div class="overflow-y-auto max-h-60 border border-slate-700/60 rounded-lg flex-1">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-800 text-slate-300 sticky top-0 border-b border-slate-700">
+                <tr>
+                  <th class="p-2">Date</th>
+                  <th class="p-2">Event ID</th>
+                  <th class="p-2 text-right">Earned</th>
+                </tr>
+              </thead>
+              <tbody id="gameLogsBody" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    let players = [];
+    let activePlayer = null;
+    let chartInstance = null;
+    let sortColumn = 'total_earnings';
+    let sortAscending = false;
+
+    async function loadDataset(fileName) {
+      try {
+        const res = await fetch(fileName);
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        const data = await res.json();
+        parseData(data);
+      } catch (err) {
+        console.error("Failed to load dataset:", err);
+        alert(`Could not load ${fileName}. Ensure the file exists in the directory.`);
+      }
+    }
+
+    function parseData(json) {
+      const config = json.player_config || {};
+      const earnings = json.player_earnings || {};
+
+      players = Object.keys(config).map(id => {
+        const pInfo = config[id];
+        const pEarnings = earnings[id] || {};
+        const total = pEarnings.total_earnings || 0;
+
+        const logs = Object.keys(pEarnings)
+          .filter(k => k !== 'total_earnings' && typeof pEarnings[k] === 'object')
+          .map(k => pEarnings[k])
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const games = logs.length;
+        const avg = games > 0 ? Number((total / games).toFixed(2)) : 0;
+
+        return {
+          id: pInfo.player_id || id,
+          name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+          total_earnings: total,
+          games_played: games,
+          avg_per_game: avg,
+          logs: logs
+        };
+      });
+
+      renderMetrics();
+      renderLeaderboard();
+
+      if (players.length > 0) {
+        selectPlayer(players[0]);
+      } else {
+        resetDetailView();
+      }
+    }
+
+    function renderMetrics() {
+      const totalPool = players.reduce((sum, p) => sum + p.total_earnings, 0);
+      const sorted = [...players].sort((a, b) => b.total_earnings - a.total_earnings);
+      const topEarner = sorted[0];
+      const avgEarnings = players.length > 0 ? (totalPool / players.length).toFixed(1) : 0;
+      const totalEvents = players.reduce((sum, p) => sum + p.games_played, 0);
+
+      document.getElementById('statTotalPool').textContent = `$${totalPool.toLocaleString()}`;
+      document.getElementById('statTopEarner').textContent = topEarner ? `${topEarner.name} ($${topEarner.total_earnings.toLocaleString()})` : '—';
+      document.getElementById('statAvgPlayer').textContent = `$${Number(avgEarnings).toLocaleString()}`;
+      document.getElementById('statTotalEvents').textContent = totalEvents.toLocaleString();
+    }
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboardBody');
+      const query = document.getElementById('searchInput').value.toLowerCase();
+
+      const filtered = players.filter(p => p.name.toLowerCase().includes(query));
+
+      filtered.sort((a, b) => {
+        const valA = a[sortColumn];
+        const valB = b[sortColumn];
+        return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+
+      tbody.innerHTML = filtered.map(p => {
+        const isSelected = activePlayer && activePlayer.id === p.id;
+        return `
+          <tr 
+            onclick="selectPlayerById('${p.id}')" 
+            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-emerald-500' : ''}"
+          >
+            <td class="p-3 font-medium text-slate-100">${p.name}</td>
+            <td class="p-3 text-right font-mono text-emerald-400 font-semibold">$${p.total_earnings.toLocaleString()}</td>
+            <td class="p-3 text-right text-slate-300">${p.games_played}</td>
+            <td class="p-3 text-right text-slate-400">$${p.avg_per_game.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function sortTable(column) {
+      if (sortColumn === column) {
+        sortAscending = !sortAscending;
+      } else {
+        sortColumn = column;
+        sortAscending = false;
+      }
+      renderLeaderboard();
+    }
+
+    function selectPlayerById(id) {
+      const p = players.find(x => String(x.id) === String(id));
+      if (p) selectPlayer(p);
+    }
+
+    function selectPlayer(p) {
+      activePlayer = p;
+      document.getElementById('noSelectionNotice').classList.add('hidden');
+      document.getElementById('playerDetailContent').classList.remove('hidden');
+
+      document.getElementById('detailPlayerName').textContent = p.name;
+      document.getElementById('detailPlayerMeta').textContent = `ID: ${p.id} • ${p.games_played} Games Logged • $${p.total_earnings.toLocaleString()} Total`;
+
+      const logsTbody = document.getElementById('gameLogsBody');
+      const reversedLogs = [...p.logs].reverse();
+      logsTbody.innerHTML = reversedLogs.map(l => `
+        <tr class="hover:bg-slate-800">
+          <td class="p-2 text-slate-300">${l.date}</td>
+          <td class="p-2 font-mono text-slate-400">${l.id}</td>
+          <td class="p-2 text-right font-mono text-emerald-400 font-semibold">$${l.earnings}</td>
+        </tr>
+      `).join('');
+
+      renderChart(p.logs);
+      renderLeaderboard();
+    }
+
+    function renderChart(logs) {
+      const ctx = document.getElementById('earningsChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      let runningTotal = 0;
+      const labels = logs.map(l => l.date);
+      const cumulative = logs.map(l => {
+        runningTotal += l.earnings;
+        return runningTotal;
+      });
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Cumulative ($)',
+            data: cumulative,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.25,
+            borderWidth: 2,
+            pointRadius: logs.length > 30 ? 0 : 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function resetDetailView() {
+      activePlayer = null;
+      document.getElementById('noSelectionNotice').classList.remove('hidden');
+      document.getElementById('playerDetailContent').classList.add('hidden');
+      if (chartInstance) chartInstance.destroy();
+    }
+
+    document.getElementById('datasetSelect').addEventListener('change', (e) => loadDataset(e.target.value));
+    document.getElementById('searchInput').addEventListener('input', renderLeaderboard);
+
+    // Initial load
+    loadDataset(document.getElementById('datasetSelect').value);
+  </script>
+</body>
+</html>
