@@ -454,9 +454,10 @@
     };
 
     const datasetJsonCache = {};
-    const ownershipCache = {}; // Cache of { "sport_season": { playerId: countNum } }
+    const ownershipCache = {};
     let portfolioCache = null;
     let portfolioKeySet = new Set();
+    let currentLoadedFile = '';
 
     function getPortfolio() {
       if (portfolioCache === null) {
@@ -684,8 +685,8 @@
       }
     }
 
-    // Fetches player ownership counts paginating through hotseason endpoint
-    async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
+    // Fetches player ownership counts with retry and rate-limit backoff
+    async function fetchAllPlayerOwnership(season, sport, onProgress = () => {}) {
       let before = 0;
       let hasMore = true;
       let pageCount = 0;
@@ -694,46 +695,83 @@
 
       while (hasMore && pageCount < maxPages) {
         pageCount++;
-        onProgress(pageCount, maxPages);
+        let pageData = null;
 
-        try {
-          const token = generateRequestToken();
-          const deviceUuid = crypto.randomUUID();
-          const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
-          const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
+        // Try up to 3 times with exponential backoff on 429/502
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const token = generateRequestToken();
+            const deviceUuid = crypto.randomUUID();
+            const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
+            const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
 
-          const res = await fetch(proxyUrl);
-          if (!res.ok) break;
+            const res = await fetch(proxyUrl);
 
-          const data = await res.json();
-          const items = data.feedItems || data.items || [];
-          if (!Array.isArray(items) || items.length === 0) break;
-
-          items.forEach(item => {
-            const playerId = String(item.entityId || item.entity?.id || item.id);
-            const countVal = item.count ?? item.total ?? item.rankDisplay?.injection?.total?.value;
-            if (playerId && countVal !== undefined) {
-              const numVal = typeof countVal === 'number' 
-                ? countVal 
-                : parseInt(String(countVal).replace(/[^0-9]/g, ''), 10) || 0;
-              ownershipMap[playerId] = numVal;
+            if (res.status === 429 || res.status === 502) {
+              const backoff = 2000 + (Math.random() * 1500);
+              console.warn(`[Shop ${sport} ${season} p.${pageCount}] Rate limit (${res.status}). Retrying in ${backoff.toFixed(0)}ms...`);
+              onProgress(pageCount, maxPages, `Rate limit hit, pausing ${Math.round(backoff/1000)}s...`);
+              await new Promise(r => setTimeout(r, backoff));
+              continue;
             }
-          });
 
-          const lastItem = items[items.length - 1];
-          const nextBefore = data.nextBefore ?? (lastItem ? lastItem.id : null);
+            if (res.status === 404) {
+              console.warn(`[Shop ${sport} ${season}] 404: No shop section found.`);
+              hasMore = false;
+              break;
+            }
 
-          if (!nextBefore || nextBefore === before) {
-            hasMore = false;
-          } else {
-            before = nextBefore;
+            if (!res.ok) {
+              console.warn(`[Shop ${sport} ${season}] Status ${res.status}`);
+              break;
+            }
+
+            pageData = await res.json();
+            break;
+          } catch (err) {
+            console.warn(`[Shop ${sport} ${season} p.${pageCount}] Fetch error:`, err);
+            await new Promise(r => setTimeout(r, 1500));
           }
+        }
 
-          await new Promise(r => setTimeout(r, 120));
-        } catch (err) {
-          console.error(`Error fetching ${sport} pass ownership for ${season}:`, err);
+        if (!pageData) {
+          console.warn(`[Shop ${sport} ${season}] Stopped at page ${pageCount} (no data received).`);
           break;
         }
+
+        const items = Array.isArray(pageData) 
+          ? pageData 
+          : (pageData.feedItems || pageData.items || pageData.passes || pageData.data || []);
+
+        if (!Array.isArray(items) || items.length === 0) {
+          console.log(`[Shop ${sport} ${season}] Page ${pageCount} returned 0 items. End of feed.`);
+          break;
+        }
+
+        items.forEach(item => {
+          const playerId = String(item.entityId || item.entity?.id || item.playerId || item.id);
+          const countVal = item.count ?? item.total ?? item.rankDisplay?.injection?.total?.value ?? item.ownershipCount ?? item.userCount;
+          if (playerId && countVal !== undefined) {
+            const numVal = typeof countVal === 'number' 
+              ? countVal 
+              : parseInt(String(countVal).replace(/[^0-9]/g, ''), 10) || 0;
+            ownershipMap[playerId] = numVal;
+          }
+        });
+
+        onProgress(pageCount, maxPages, `Scanned page ${pageCount} (${Object.keys(ownershipMap).length} cards indexed)...`);
+
+        const lastItem = items[items.length - 1];
+        const nextBefore = pageData.nextBefore ?? (lastItem ? lastItem.id : null);
+
+        if (!nextBefore || nextBefore === before) {
+          hasMore = false;
+        } else {
+          before = nextBefore;
+        }
+
+        // Delay between page requests to avoid rate limits
+        await new Promise(r => setTimeout(r, 250));
       }
 
       return ownershipMap;
@@ -744,6 +782,9 @@
       const year = document.getElementById('yearSelect').value;
       const sportApi = DATASET_TO_SPORT_API[sport] || sport.toLowerCase();
       const cacheKey = `${sportApi}_${year}`;
+
+      // Ensure local dataset is loaded first so player stats exist for cross-referencing
+      await triggerDatasetLoad();
 
       const scanBtn = document.getElementById('recScanBtn');
       const scanBtnText = document.getElementById('recScanBtnText');
@@ -760,9 +801,9 @@
       progressText.textContent = '5%';
 
       try {
-        const ownershipMap = await fetchAllPlayerOwnership(year, sportApi, (page, max) => {
-          const pct = Math.min(95, Math.round((page / 30) * 100));
-          statusText.textContent = `Fetching market pages (${page})...`;
+        const ownershipMap = await fetchAllPlayerOwnership(year, sportApi, (page, max, msg) => {
+          const pct = Math.min(95, Math.round((page / 35) * 100));
+          statusText.textContent = msg || `Fetching market pages (${page})...`;
           progressText.textContent = `${pct}%`;
           progressBar.style.width = `${pct}%`;
         });
@@ -770,7 +811,7 @@
         ownershipCache[cacheKey] = ownershipMap;
         progressBar.style.width = '100%';
         progressText.textContent = '100%';
-        statusText.textContent = `Market scanned: found ownership records for ${Object.keys(ownershipMap).length} players.`;
+        statusText.textContent = `Scan complete! Indexed ${Object.keys(ownershipMap).length} players from market.`;
 
         renderRecommendationsView();
       } catch (err) {
@@ -969,7 +1010,6 @@
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
-      // Reset base tab styles
       navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
       navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
       navRecsBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
@@ -1033,7 +1073,7 @@
         document.getElementById('metricAvgLabel').textContent = 'Avg Target RAX';
         document.getElementById('metricCountLabel').textContent = 'Targets Found';
 
-        renderRecommendationsView();
+        triggerDatasetLoad();
       }
     }
 
@@ -1045,9 +1085,21 @@
       const cacheKey = `${sportApi}_${year}`;
       const ownershipMap = ownershipCache[cacheKey];
 
-      const minRax = parseInt(document.getElementById('recMinRaxInput').value, 10) || 230;
+      const minRax = parseInt(document.getElementById('recMinRaxInput').value, 10) || 0;
       const maxOwners = parseInt(document.getElementById('recMaxOwnersInput').value, 10) || 1000;
       const query = document.getElementById('searchInput').value.toLowerCase();
+
+      if (!players || players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400 text-sm space-y-2">
+              <div class="text-amber-300 font-semibold">No dataset file loaded for ${sport} ${year}.</div>
+              <p class="text-xs text-slate-500">Ensure the JSON file exists at <code class="text-slate-300">${availableDatasets[sport]?.[year] || 'data/'}</code>.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
       if (!ownershipMap) {
         document.getElementById('statTotalPool').textContent = '—';
@@ -1058,9 +1110,9 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="6" class="p-10 text-center text-slate-400 text-sm space-y-3">
-              <div class="text-amber-300 font-semibold">No live ownership scan data for ${sport} ${year} yet.</div>
-              <p class="text-xs text-slate-500 max-w-md mx-auto">
-                Click <strong class="text-slate-300">"Scan Live Market"</strong> above to retrieve card ownership counts from the shop feed.
+              <div class="text-amber-300 font-semibold text-base">Market not yet scanned for ${sport} ${year}</div>
+              <p class="text-xs text-slate-400 max-w-md mx-auto">
+                Click <strong class="text-amber-400 font-medium">"Scan Live Market"</strong> above to retrieve live card ownership counts from the Real App shop feed.
               </p>
             </td>
           </tr>
@@ -1068,7 +1120,6 @@
         return;
       }
 
-      // Filter: Owners < maxOwners AND total_earnings >= minRax
       let qualified = players.filter(p => {
         const numOwners = ownershipMap[String(p.id)];
         if (numOwners === undefined) return false;
@@ -1078,7 +1129,6 @@
         owners: ownershipMap[String(p.id)]
       }));
 
-      // Metrics Ribbon for Qualified Recommendations
       const totalQualifiedRAX = qualified.reduce((sum, p) => sum + p.total_earnings, 0);
       const topTarget = [...qualified].sort((a, b) => b.total_earnings - a.total_earnings)[0];
       const avgTargetRAX = qualified.length > 0 ? (totalQualifiedRAX / qualified.length).toFixed(1) : 0;
@@ -1129,7 +1179,7 @@
             <td class="p-3 font-medium text-slate-100">
               <div>${p.name}</div>
               <div class="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
-                <span>Value Buy</span>
+                <span>Value Target</span>
                 <span>•</span>
                 <span>${(p.total_earnings / Math.max(1, p.owners)).toFixed(2)} RAX/Owner</span>
               </div>
@@ -1328,13 +1378,13 @@
       yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
     }
 
-    function triggerDatasetLoad() {
+    async function triggerDatasetLoad() {
       if (currentMainView === 'portfolio') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
       const filePath = availableDatasets[sport]?.[year];
       if (filePath) {
-        loadDataset(filePath);
+        await loadDataset(filePath);
       }
     }
 
@@ -1361,14 +1411,31 @@
     }
 
     async function loadDataset(fileName) {
+      if (currentLoadedFile === fileName && players.length > 0) {
+        if (currentMainView === 'recs') {
+          renderRecommendationsView();
+        } else {
+          renderMetrics();
+          renderLeaderboard();
+        }
+        return;
+      }
+
       try {
         const res = await fetch(fileName);
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        currentLoadedFile = fileName;
         parseData(data);
       } catch (err) {
         console.error("Failed to load dataset:", err);
-        alert(`Could not load ${fileName}. Check that the data folder and file path are correct.`);
+        currentLoadedFile = '';
+        players = [];
+        if (currentMainView === 'recs') {
+          renderRecommendationsView();
+        } else {
+          renderLeaderboard();
+        }
       }
     }
 
