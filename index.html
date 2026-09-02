@@ -6,7 +6,6 @@
   <title>Player RAX Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Hashids for request token generation -->
   <script src="https://cdn.jsdelivr.net/npm/hashids@2.2.10/dist/hashids.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-6 font-sans">
@@ -30,7 +29,6 @@
       </div>
 
       <div class="flex items-center gap-4 flex-wrap">
-        <!-- Main Navigation Tabs -->
         <nav class="inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-sm font-medium">
           <button
             id="navExploreBtn"
@@ -49,7 +47,6 @@
           </button>
         </nav>
 
-        <!-- Dataset Selectors (Explore View) -->
         <div id="datasetControls" class="flex items-center gap-3">
           <div class="flex items-center gap-2">
             <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
@@ -61,7 +58,6 @@
           </div>
         </div>
 
-        <!-- Batch Rarity Tool (Portfolio View) -->
         <div id="portfolioRarityControls" class="hidden flex items-center gap-2">
           <label for="batchRaritySelect" class="text-sm text-slate-300 font-medium">Set All Rarities:</label>
           <select id="batchRaritySelect" onchange="applyBatchRarity(this.value)" class="bg-black border border-zinc-700 text-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
@@ -84,7 +80,7 @@
           <input
             type="text"
             id="syncUsernameInput"
-            value=""
+            value="cdeck24"
             placeholder="Username (e.g. cdeck24)"
             class="bg-black border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-48"
           />
@@ -104,7 +100,6 @@
         </div>
       </div>
 
-      <!-- Sync Progress Indicator -->
       <div id="syncProgressWrapper" class="hidden mt-3 pt-3 border-t border-zinc-800 space-y-1.5">
         <div class="flex items-center justify-between text-xs font-mono text-slate-400">
           <span id="syncStatusText">Initializing sync...</span>
@@ -188,7 +183,6 @@
             ></button>
           </div>
 
-          <!-- In-Detail Card Rarity Selector -->
           <div id="detailRarityWrapper" class="hidden items-center justify-between p-2.5 rounded-lg bg-black/60 border border-zinc-800 text-xs">
             <span class="text-slate-300 font-medium">Card Rarity Tier:</span>
             <select
@@ -202,7 +196,6 @@
             <canvas id="earningsChart"></canvas>
           </div>
 
-          <!-- Schedule View Switcher -->
           <div class="flex items-center justify-between border-b border-zinc-800 pb-2 pt-2">
             <span class="text-sm font-semibold">Schedule & Log</span>
             <div class="inline-flex rounded-lg bg-black p-1 border border-zinc-800 text-xs">
@@ -211,7 +204,6 @@
             </div>
           </div>
 
-          <!-- Calendar View Container -->
           <div id="calendarViewContainer" class="space-y-3">
             <div class="flex items-center justify-between">
               <span id="calendarMonthLabel" class="text-sm font-semibold text-slate-200"></span>
@@ -221,14 +213,12 @@
               </div>
             </div>
 
-            <!-- Days Grid -->
             <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 mb-1">
               <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
             </div>
             <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
           </div>
 
-          <!-- List View Container -->
           <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-zinc-800 rounded-lg flex-1">
             <table class="w-full text-left text-xs">
               <thead class="bg-zinc-950 text-slate-300 sticky top-0 border-b border-zinc-800">
@@ -307,32 +297,24 @@
       return { ...r, tier: tierName, ...theme };
     }
 
-    // Resolves pass payload boostInfo into a matching RARITIES item
     function resolveRarityFromBoostInfo(boostInfo) {
       if (!boostInfo) return RARITIES[0];
       const rawLabel = (boostInfo.rarityLabel || '').trim().toLowerCase();
       const rawMult = parseInt(boostInfo.multiplier || '', 10) || 0;
 
       if (rawLabel) {
-        // Priority 1: Match startsWith (e.g. "Epic" -> "Epic (10x)")
         const startsMatch = RARITIES.find(r => r.label.toLowerCase().startsWith(rawLabel + ' '));
         if (startsMatch) return startsMatch;
-
-        // Priority 2: Substring match
         const subMatch = RARITIES.find(r => r.label.toLowerCase().includes(rawLabel));
         if (subMatch) return subMatch;
       }
-
-      // Priority 3: Numerical multiplier fallback
       if (rawMult > 0) {
         const valMatch = RARITIES.find(r => r.value === rawMult);
         if (valMatch) return valMatch;
       }
-
       return RARITIES[0];
     }
 
-    // Proxy & API Credentials
     const WORKER_PROXY = 'https://rda-worker.coledecker04.workers.dev/';
     const REAL_AUTH_TOKEN = 'xnr5VpW3!ApZk8L2E!4fe6e26f-949f-4936-ae3e-16384878932f';
     const DEFAULT_USER_ID = 'xnr5VpW3';
@@ -401,6 +383,162 @@
     };
 
     const datasetJsonCache = {};
+    let portfolioCache = null;
+    let portfolioKeySet = new Set();
+
+    function getPortfolio() {
+      if (portfolioCache === null) {
+        try {
+          portfolioCache = JSON.parse(localStorage.getItem('rax_saved_cards') || '[]');
+        } catch (e) {
+          portfolioCache = [];
+        }
+        updatePortfolioKeySet();
+      }
+      return portfolioCache;
+    }
+
+    function updatePortfolioKeySet() {
+      portfolioKeySet = new Set((portfolioCache || []).map(c => c.cardKey));
+    }
+
+    function savePortfolio(cards) {
+      portfolioCache = cards;
+      updatePortfolioKeySet();
+      try {
+        localStorage.setItem('rax_saved_cards', JSON.stringify(cards));
+      } catch (e) {
+        console.warn("Storage write failed:", e);
+      }
+      updatePortfolioBadge();
+    }
+
+    function updatePortfolioBadge() {
+      document.getElementById('portfolioCountBadge').textContent = getPortfolio().length;
+    }
+
+    function makeCardKey(pId, sport, year) {
+      return `${sport}_${year}_${pId}`;
+    }
+
+    function isCardSaved(pId, sport, year) {
+      return portfolioKeySet.has(makeCardKey(pId, sport, year));
+    }
+
+    function removePortfolioCard(cardKey) {
+      const cards = getPortfolio().filter(c => c.cardKey !== cardKey);
+      savePortfolio(cards);
+      renderPortfolioView();
+      if (activePlayer && activePlayer.cardKey === cardKey) {
+        const remaining = getPortfolio();
+        if (remaining.length > 0) {
+          selectPlayer(remaining[0]);
+        } else {
+          resetDetailView();
+        }
+      }
+    }
+
+    function toggleCardFromExplore(pId) {
+      const p = players.find(x => String(x.id) === String(pId));
+      if (!p) return;
+      const sport = document.getElementById('sportSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      toggleCardInPortfolio(p, sport, year);
+    }
+
+    function toggleCardInPortfolio(p, sport, year) {
+      const cards = getPortfolio();
+      const key = makeCardKey(p.id, sport, year);
+      const index = cards.findIndex(c => c.cardKey === key);
+
+      if (index >= 0) {
+        cards.splice(index, 1);
+      } else {
+        cards.push({
+          cardKey: key,
+          id: p.id,
+          name: p.name,
+          sport: sport,
+          year: year,
+          multiplier: p.multiplier || 1,
+          total_earnings: p.total_earnings,
+          games_played: p.games_played,
+          avg_per_game: p.avg_per_game,
+          logs: p.logs
+        });
+      }
+
+      savePortfolio(cards);
+
+      if (currentMainView === 'portfolio') {
+        renderPortfolioView();
+      } else {
+        renderLeaderboard();
+        if (activePlayer && String(activePlayer.id) === String(p.id)) {
+          updateDetailPortfolioButton();
+        }
+      }
+    }
+
+    function toggleActivePlayerPortfolio() {
+      if (!activePlayer) return;
+      const sport = activePlayer.sport || document.getElementById('sportSelect').value;
+      const year = activePlayer.year || document.getElementById('yearSelect').value;
+      toggleCardInPortfolio(activePlayer, sport, year);
+    }
+
+    function updateCardRarity(cardKey, multiplier) {
+      const cards = getPortfolio();
+      const card = cards.find(c => c.cardKey === cardKey);
+      if (card) {
+        card.multiplier = Number(multiplier);
+        savePortfolio(cards);
+
+        if (currentMainView === 'portfolio') {
+          renderPortfolioView();
+        }
+
+        if (activePlayer && activePlayer.cardKey === cardKey) {
+          activePlayer.multiplier = Number(multiplier);
+          selectPlayer(activePlayer);
+        }
+      }
+    }
+
+    function applyBatchRarity(multiplier) {
+      const mult = Number(multiplier);
+      const cards = getPortfolio();
+      cards.forEach(c => { c.multiplier = mult; });
+      savePortfolio(cards);
+      updateBatchSelectStyle();
+
+      if (currentMainView === 'portfolio') {
+        renderPortfolioView();
+        if (activePlayer) {
+          const updated = cards.find(c => c.cardKey === activePlayer.cardKey);
+          if (updated) selectPlayer(updated);
+        }
+      }
+    }
+
+    function onDetailRarityChange(val) {
+      if (!activePlayer || !activePlayer.cardKey) return;
+      updateCardRarity(activePlayer.cardKey, val);
+      updateDetailSelectStyle();
+    }
+
+    function updateBatchSelectStyle() {
+      const batchSelect = document.getElementById('batchRaritySelect');
+      const info = getRarityInfo(batchSelect.value);
+      batchSelect.className = `bg-black border ${info.border} ${info.text} rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer`;
+    }
+
+    function updateDetailSelectStyle() {
+      const detailSelect = document.getElementById('detailRaritySelect');
+      const info = getRarityInfo(detailSelect.value);
+      detailSelect.className = `bg-black border ${info.border} ${info.text} font-semibold rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer`;
+    }
 
     function generateRequestToken() {
       const timestampMs = Date.now();
@@ -512,7 +650,7 @@
       try {
         const userId = await fetchUserIdByUsername(username);
         if (!userId) {
-          throw new Error(`Could not find a user with username "${username}".`);
+          throw new Error(`Could not find user "${username}".`);
         }
 
         const queue = [];
@@ -550,7 +688,6 @@
                 const pid = String(pass.entityId || pass.entity?.id || pass.id);
                 const playerName = pass.label || (pass.entity ? `${pass.entity.firstName || ''} ${pass.entity.lastName || ''}`.trim() : 'Unknown Player');
                 
-                // Match exact rarity label and multiplier
                 const rarityObj = resolveRarityFromBoostInfo(pass.boostInfo);
                 const mult = rarityObj.value;
                 const cardKey = makeCardKey(pid, datasetSport, season);
@@ -571,7 +708,6 @@
                   games = logs.length;
                   avg = games > 0 ? Number((totalEarnings / games).toFixed(2)) : 0;
                 } else {
-                  // If not yet available in local dataset, fall back to pass payload earnings
                   totalEarnings = pass.earned || 0;
                   games = totalEarnings > 0 ? 1 : 0;
                   avg = totalEarnings;
@@ -646,135 +782,6 @@
     let currentCalendarDate = new Date();
     let detailTab = 'calendar';
     let currentMainView = 'explore';
-
-    function getPortfolio() {
-      try {
-        return JSON.parse(localStorage.getItem('rax_saved_cards') || '[]');
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function savePortfolio(cards) {
-      localStorage.setItem('rax_saved_cards', JSON.stringify(cards));
-      updatePortfolioBadge();
-    }
-
-    function updatePortfolioBadge() {
-      const count = getPortfolio().length;
-      document.getElementById('portfolioCountBadge').textContent = count;
-    }
-
-    function makeCardKey(pId, sport, year) {
-      return `${sport}_${year}_${pId}`;
-    }
-
-    function isCardSaved(pId, sport, year) {
-      const cards = getPortfolio();
-      const targetKey = makeCardKey(pId, sport, year);
-      return cards.some(c => c.cardKey === targetKey);
-    }
-
-    function toggleCardInPortfolio(p, sport, year) {
-      const cards = getPortfolio();
-      const key = makeCardKey(p.id, sport, year);
-      const index = cards.findIndex(c => c.cardKey === key);
-
-      if (index >= 0) {
-        cards.splice(index, 1);
-      } else {
-        cards.push({
-          cardKey: key,
-          id: p.id,
-          name: p.name,
-          sport: sport,
-          year: year,
-          multiplier: p.multiplier || 1,
-          total_earnings: p.total_earnings,
-          games_played: p.games_played,
-          avg_per_game: p.avg_per_game,
-          logs: p.logs
-        });
-      }
-
-      savePortfolio(cards);
-
-      if (currentMainView === 'portfolio') {
-        renderPortfolioView();
-        if (activePlayer && activePlayer.cardKey === key && index >= 0) {
-          const remaining = getPortfolio();
-          if (remaining.length > 0) {
-            selectPlayer(remaining[0]);
-          } else {
-            resetDetailView();
-          }
-        }
-      } else {
-        renderLeaderboard();
-        if (activePlayer && activePlayer.id === p.id) {
-          updateDetailPortfolioButton();
-        }
-      }
-    }
-
-    function toggleActivePlayerPortfolio() {
-      if (!activePlayer) return;
-      const sport = activePlayer.sport || document.getElementById('sportSelect').value;
-      const year = activePlayer.year || document.getElementById('yearSelect').value;
-      toggleCardInPortfolio(activePlayer, sport, year);
-    }
-
-    function updateCardRarity(cardKey, multiplier) {
-      const cards = getPortfolio();
-      const card = cards.find(c => c.cardKey === cardKey);
-      if (card) {
-        card.multiplier = Number(multiplier);
-        savePortfolio(cards);
-
-        if (currentMainView === 'portfolio') {
-          renderPortfolioView();
-        }
-
-        if (activePlayer && activePlayer.cardKey === cardKey) {
-          activePlayer.multiplier = Number(multiplier);
-          selectPlayer(activePlayer);
-        }
-      }
-    }
-
-    function applyBatchRarity(multiplier) {
-      const mult = Number(multiplier);
-      const cards = getPortfolio();
-      cards.forEach(c => { c.multiplier = mult; });
-      savePortfolio(cards);
-      updateBatchSelectStyle();
-
-      if (currentMainView === 'portfolio') {
-        renderPortfolioView();
-        if (activePlayer) {
-          const updated = cards.find(c => c.cardKey === activePlayer.cardKey);
-          if (updated) selectPlayer(updated);
-        }
-      }
-    }
-
-    function onDetailRarityChange(val) {
-      if (!activePlayer || !activePlayer.cardKey) return;
-      updateCardRarity(activePlayer.cardKey, val);
-      updateDetailSelectStyle();
-    }
-
-    function updateBatchSelectStyle() {
-      const batchSelect = document.getElementById('batchRaritySelect');
-      const info = getRarityInfo(batchSelect.value);
-      batchSelect.className = `bg-black border ${info.border} ${info.text} rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer`;
-    }
-
-    function updateDetailSelectStyle() {
-      const detailSelect = document.getElementById('detailRaritySelect');
-      const info = getRarityInfo(detailSelect.value);
-      detailSelect.className = `bg-black border ${info.border} ${info.text} font-semibold rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer`;
-    }
 
     function switchMainView(view) {
       currentMainView = view;
@@ -889,12 +896,16 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(c => {
+      const rowsHtml = filtered.map(c => {
         const isSelected = activePlayer && activePlayer.cardKey === c.cardKey;
         const mult = c.multiplier || 1;
         const effectiveTotal = c.total_earnings * mult;
         const effectiveAvg = c.avg_per_game * mult;
         const rInfo = getRarityInfo(mult);
+
+        const optionsHtml = RARITIES.map(r => 
+          `<option value="${r.value}" class="bg-zinc-900 text-slate-200" ${mult === r.value ? 'selected' : ''}>${r.label}</option>`
+        ).join('');
 
         return `
           <tr 
@@ -913,11 +924,7 @@
                 onchange="updateCardRarity('${c.cardKey}', this.value)"
                 class="bg-black border ${rInfo.border} ${rInfo.text} rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
               >
-                ${RARITIES.map(r => `
-                  <option value="${r.value}" class="bg-zinc-900 text-slate-200" ${mult === r.value ? 'selected' : ''}>
-                    ${r.label}
-                  </option>
-                `).join('')}
+                ${optionsHtml}
               </select>
             </td>
             <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
@@ -935,7 +942,7 @@
             </td>
             <td class="p-3 text-center" onclick="event.stopPropagation()">
               <button 
-                onclick="toggleCardInPortfolio(${JSON.stringify(c).replace(/"/g, '&quot;')}, '${c.sport}', '${c.year}')" 
+                onclick="removePortfolioCard('${c.cardKey}')" 
                 class="px-2.5 py-1 text-xs rounded-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition"
               >
                 Remove
@@ -945,14 +952,15 @@
         `;
       }).join('');
 
+      tbody.innerHTML = rowsHtml;
+
       if (!activePlayer || !cards.some(c => c.cardKey === activePlayer.cardKey)) {
         selectPlayer(filtered[0]);
       }
     }
 
     function selectPortfolioCard(cardKey) {
-      const cards = getPortfolio();
-      const card = cards.find(c => c.cardKey === cardKey);
+      const card = getPortfolio().find(c => c.cardKey === cardKey);
       if (card) selectPlayer(card);
     }
 
@@ -1107,8 +1115,8 @@
         return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
       });
 
-      tbody.innerHTML = filtered.map(p => {
-        const isSelected = activePlayer && activePlayer.id === p.id;
+      const rowsHtml = filtered.map(p => {
+        const isSelected = activePlayer && String(activePlayer.id) === String(p.id);
         const inPortfolio = isCardSaved(p.id, currentSport, currentYear);
 
         return `
@@ -1132,7 +1140,7 @@
             </td>
             <td class="p-3 text-center" onclick="event.stopPropagation()">
               <button 
-                onclick="toggleCardInPortfolio(${JSON.stringify(p).replace(/"/g, '&quot;')}, '${currentSport}', '${currentYear}')" 
+                onclick="toggleCardFromExplore('${p.id}')" 
                 class="p-1.5 rounded-lg border transition ${inPortfolio 
                   ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 hover:bg-sky-500/30' 
                   : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
@@ -1148,6 +1156,8 @@
           </tr>
         `;
       }).join('');
+
+      tbody.innerHTML = rowsHtml;
     }
 
     function sortTable(column) {
@@ -1304,10 +1314,10 @@
       const firstDayIndex = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
       const grid = document.getElementById('calendarGrid');
-      grid.innerHTML = '';
+      let gridHtml = '';
 
       for (let i = 0; i < firstDayIndex; i++) {
-        grid.innerHTML += `<div class="h-10 rounded border border-transparent"></div>`;
+        gridHtml += `<div class="h-10 rounded border border-transparent"></div>`;
       }
 
       for (let day = 1; day <= totalDays; day++) {
@@ -1318,7 +1328,7 @@
         const earnings = dayEarningsMap[dateKey];
 
         if (hasGame) {
-          grid.innerHTML += `
+          gridHtml += `
             <div class="h-10 rounded-md bg-sky-500/10 border border-sky-500/30 flex flex-col items-center justify-between p-1 transition hover:bg-sky-500/20" title="${formatCalendarDateString(dateKey)}: ${earnings} RAX">
               <span class="text-[10px] text-slate-300 font-semibold leading-none">${day}</span>
               <span class="text-[10px] text-sky-400 font-bold leading-none flex items-center gap-0.5">
@@ -1327,13 +1337,15 @@
             </div>
           `;
         } else {
-          grid.innerHTML += `
+          gridHtml += `
             <div class="h-10 rounded-md bg-black/40 border border-zinc-800/80 flex items-start justify-center p-1 text-zinc-700">
               <span class="text-[10px] leading-none">${day}</span>
             </div>
           `;
         }
       }
+
+      grid.innerHTML = gridHtml;
     }
 
     function renderChart(logs, mult = 1) {
@@ -1398,12 +1410,16 @@
       if (chartInstance) chartInstance.destroy();
     }
 
+    let searchDebounceTimer = null;
     document.getElementById('searchInput').addEventListener('input', () => {
-      if (currentMainView === 'explore') {
-        renderLeaderboard();
-      } else {
-        renderPortfolioView();
-      }
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        if (currentMainView === 'explore') {
+          renderLeaderboard();
+        } else {
+          renderPortfolioView();
+        }
+      }, 75);
     });
 
     updatePortfolioBadge();
