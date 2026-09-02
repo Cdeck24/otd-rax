@@ -13,7 +13,7 @@
     <!-- Header & Controls -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
       <div class="flex items-center gap-3">
-        <div class="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sky-400">
+        <div class="p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400">
           <svg viewBox="0 0 512 512" class="w-8 h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
             <path d="M128.1,141.1h356.8C442.8,57.4,356.1,0,256,0C192,0,133.5,23.5,88.6,62.3L128.1,141.1z"></path>
             <polygon points="355.3,193.2 154.2,193.2 254.7,394"></polygon>
@@ -29,11 +29,11 @@
       <div class="flex items-center gap-3 flex-wrap">
         <div class="flex items-center gap-2">
           <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
-          <select id="sportSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+          <select id="sportSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
         </div>
         <div class="flex items-center gap-2">
           <label for="yearSelect" class="text-sm text-slate-300 font-medium">Year:</label>
-          <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+          <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
         </div>
       </div>
     </header>
@@ -69,7 +69,7 @@
             type="text"
             id="searchInput"
             placeholder="Search player name..."
-            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64"
+            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full sm:w-64"
           />
         </div>
 
@@ -110,7 +110,7 @@
           <div class="flex items-center justify-between border-b border-slate-700 pb-2 pt-2">
             <span class="text-sm font-semibold">Schedule & Log</span>
             <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-700 text-xs">
-              <button id="tabCalendarBtn" onclick="switchDetailTab('calendar')" class="px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-sky-400">Calendar</button>
+              <button id="tabCalendarBtn" onclick="switchDetailTab('calendar')" class="px-2.5 py-1 rounded-md font-medium bg-sky-500/20 text-sky-400">Calendar</button>
               <button id="tabListBtn" onclick="switchDetailTab('list')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">List</button>
             </div>
           </div>
@@ -336,7 +336,7 @@
         return `
           <tr 
             onclick="selectPlayerById('${p.id}')" 
-            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-amber-500' : ''}"
+            class="cursor-pointer transition hover:bg-slate-700/50 ${isSelected ? 'bg-slate-700/70 border-l-4 border-sky-500' : ''}"
           >
             <td class="p-3 font-medium text-slate-100">${p.name}</td>
             <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
@@ -421,12 +421,12 @@
       const listContainer = document.getElementById('listViewContainer');
 
       if (tab === 'calendar') {
-        calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-sky-400";
+        calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-sky-500/20 text-sky-400";
         listBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
         calContainer.classList.remove('hidden');
         listContainer.classList.add('hidden');
       } else {
-        listBtn.className = "px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-sky-400";
+        listBtn.className = "px-2.5 py-1 rounded-md font-medium bg-sky-500/20 text-sky-400";
         calBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
         listContainer.classList.remove('hidden');
         calContainer.classList.add('hidden');
@@ -475,7 +475,7 @@
 
         if (hasGame) {
           grid.innerHTML += `
-            <div class="h-10 rounded-md bg-amber-500/10 border border-amber-500/30 flex flex-col items-center justify-between p-1 transition hover:bg-amber-500/20" title="${formatCalendarDateString(dateKey)}: ${earnings} RAX">
+            <div class="h-10 rounded-md bg-sky-500/10 border border-sky-500/30 flex flex-col items-center justify-between p-1 transition hover:bg-sky-500/20" title="${formatCalendarDateString(dateKey)}: ${earnings} RAX">
               <span class="text-[10px] text-slate-300 font-semibold leading-none">${day}</span>
               <span class="text-[10px] text-sky-400 font-bold leading-none flex items-center gap-0.5">
                 ${raxIcon('w-2.5 h-2.5 text-sky-400')} ${earnings}
