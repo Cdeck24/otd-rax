@@ -6,6 +6,8 @@
   <title>Player RAX Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Hashids for request token generation -->
+  <script src="https://cdn.jsdelivr.net/npm/hashids@2.2.10/dist/hashids.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-6 font-sans">
   <div class="max-w-7xl mx-auto space-y-6">
@@ -66,6 +68,53 @@
         </div>
       </div>
     </header>
+
+    <!-- Portfolio Account Sync Panel -->
+    <section id="portfolioSyncBanner" class="hidden bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-sky-400"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+            <span>Auto-Sync Real Cards</span>
+          </div>
+          <p class="text-xs text-slate-400">Sync all owned passes across every sport and assign each player's exact card rarity.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            id="syncUsernameInput"
+            value="cdeck24"
+            placeholder="Username (e.g. cdeck24)"
+            class="bg-black border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-48"
+          />
+          <button
+            id="syncBtn"
+            onclick="startPortfolioSync()"
+            class="px-4 py-1.5 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 text-sm font-medium transition flex items-center gap-2"
+          >
+            <span id="syncBtnText">Sync Account</span>
+          </button>
+          <button
+            onclick="clearPortfolio()"
+            class="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 text-sm font-medium transition"
+          >
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <!-- Sync Progress Indicator -->
+      <div id="syncProgressWrapper" class="hidden mt-3 pt-3 border-t border-zinc-800 space-y-1.5">
+        <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+          <span id="syncStatusText">Initializing sync...</span>
+          <span id="syncProgressText">0%</span>
+        </div>
+        <div class="w-full bg-black/60 rounded-full h-1.5 overflow-hidden">
+          <div id="syncProgressBar" class="bg-sky-400 h-full rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Metrics Ribbon -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -243,7 +292,7 @@
     const RARITY_THEMES = {
       'General':   { text: 'text-gray-400',    bg: 'bg-gray-500/20',    border: 'border-gray-500/40' },
       'Common':    { text: 'text-blue-400',    bg: 'bg-blue-500/20',    border: 'border-blue-500/40' },
-      'Uncommon':  { text: 'text-green-400',   bg: 'bg-green-500/20',   border: 'border-green-500/40' },
+      'Uncommon':  { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40' },
       'Rare':      { text: 'text-orange-400',  bg: 'bg-orange-500/20',  border: 'border-orange-500/40' },
       'Epic':      { text: 'text-red-400',     bg: 'bg-red-500/20',     border: 'border-red-500/40' },
       'Legendary': { text: 'text-purple-400',  bg: 'bg-purple-500/20',  border: 'border-purple-500/40' },
@@ -255,12 +304,60 @@
       const r = RARITIES.find(item => item.value === Number(multiplier)) || RARITIES[0];
       const tierName = r.label.split(' ')[0];
       const theme = RARITY_THEMES[tierName] || RARITY_THEMES['General'];
-      return {
-        ...r,
-        tier: tierName,
-        ...theme
-      };
+      return { ...r, tier: tierName, ...theme };
     }
+
+    // Resolves pass payload boostInfo into a matching RARITIES item
+    function resolveRarityFromBoostInfo(boostInfo) {
+      if (!boostInfo) return RARITIES[0];
+      const rawLabel = (boostInfo.rarityLabel || '').trim().toLowerCase();
+      const rawMult = parseInt(boostInfo.multiplier || '', 10) || 0;
+
+      if (rawLabel) {
+        // Priority 1: Match startsWith (e.g. "Epic" -> "Epic (10x)")
+        const startsMatch = RARITIES.find(r => r.label.toLowerCase().startsWith(rawLabel + ' '));
+        if (startsMatch) return startsMatch;
+
+        // Priority 2: Substring match
+        const subMatch = RARITIES.find(r => r.label.toLowerCase().includes(rawLabel));
+        if (subMatch) return subMatch;
+      }
+
+      // Priority 3: Numerical multiplier fallback
+      if (rawMult > 0) {
+        const valMatch = RARITIES.find(r => r.value === rawMult);
+        if (valMatch) return valMatch;
+      }
+
+      return RARITIES[0];
+    }
+
+    // Proxy & API Credentials
+    const WORKER_PROXY = 'https://rda-worker.coledecker04.workers.dev/';
+    const REAL_AUTH_TOKEN = 'xnr5VpW3!ApZk8L2E!4fe6e26f-949f-4936-ae3e-16384878932f';
+    const DEFAULT_USER_ID = 'xnr5VpW3';
+
+    const TARGET_SCHEDULE = {
+      wnba: [2024, 2025],
+      mlb: [2022, 2023, 2024, 2025],
+      nba: [2023, 2024, 2025, 2026],
+      ncaam: [2023, 2024, 2025, 2026],
+      ncaaf: [2023, 2024, 2025],
+      soccer: [2025],
+      nfl: [2022, 2023, 2024, 2025]
+    };
+
+    const SPORT_API_TO_DATASET = {
+      'mlb': 'MLB',
+      'wnba': 'WNBA',
+      'nba': 'NBA',
+      'soccer': 'FC',
+      'ncaaf': 'CFB',
+      'cfb': 'CFB',
+      'golf': 'GOLF',
+      'ncaam': 'CBB',
+      'nfl': 'NFL'
+    };
 
     const availableDatasets = {
       "MLB": {
@@ -297,9 +394,249 @@
         "2025": "data/2025-soccer-data.json"
       },
       "CFB": {
+        "2025": "data/2025-ncaaf-data.json",
+        "2024": "data/2024-ncaaf-data.json",
         "2023": "data/2023-ncaaf-data.json"
       }
     };
+
+    const datasetJsonCache = {};
+
+    function generateRequestToken() {
+      const timestampMs = Date.now();
+      // @ts-ignore
+      const hasher = new Hashids("realwebapp", 16);
+      return hasher.encode(timestampMs);
+    }
+
+    async function fetchUserIdByUsername(username, retries = 0) {
+      const token = generateRequestToken();
+      const deviceUuid = crypto.randomUUID();
+      const cleanUsername = username.trim().toLowerCase();
+      const targetUrl = `https://web.realapp.com/user/${encodeURIComponent(cleanUsername)}`;
+      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
+
+      try {
+        const res = await fetch(proxyUrl);
+        if (res.status === 429 || res.status === 502) {
+          if (retries < 3) {
+            const backoff = 2000 + (Math.random() * 1000);
+            await new Promise(r => setTimeout(r, backoff));
+            return fetchUserIdByUsername(cleanUsername, retries + 1);
+          }
+          throw new Error(`API Rate Limit Hit (${res.status})`);
+        }
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+
+        const data = await res.json();
+        return data?.user?.id || null;
+      } catch (err) {
+        if (retries < 3) {
+          await new Promise(r => setTimeout(r, 2000));
+          return fetchUserIdByUsername(cleanUsername, retries + 1);
+        }
+        return null;
+      }
+    }
+
+    async function fetchUserPasses(sport, season, userId = DEFAULT_USER_ID, retries = 0) {
+      const token = generateRequestToken();
+      const deviceUuid = crypto.randomUUID();
+      const targetUrl = `https://web.realapp.com/userpasses/${userId}/passes?entityType=player&season=${season}&sport=${sport}`;
+      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
+
+      try {
+        const res = await fetch(proxyUrl);
+        if (res.status === 429 || res.status === 502) {
+          if (retries < 3) {
+            const backoff = 2000 + (Math.random() * 1000);
+            await new Promise(r => setTimeout(r, backoff));
+            return fetchUserPasses(sport, season, userId, retries + 1);
+          }
+          throw new Error(`API Rate Limit Hit (${res.status})`);
+        }
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+
+        return await res.json();
+      } catch (err) {
+        if (retries < 3) {
+          await new Promise(r => setTimeout(r, 2000));
+          return fetchUserPasses(sport, season, userId, retries + 1);
+        }
+        return null;
+      }
+    }
+
+    async function getDatasetJson(sportLabel, season) {
+      const key = `${sportLabel}_${season}`;
+      if (datasetJsonCache[key]) return datasetJsonCache[key];
+
+      const filePath = availableDatasets[sportLabel]?.[String(season)];
+      if (!filePath) return null;
+
+      try {
+        const res = await fetch(filePath);
+        if (!res.ok) return null;
+        const json = await res.json();
+        datasetJsonCache[key] = json;
+        return json;
+      } catch {
+        return null;
+      }
+    }
+
+    async function startPortfolioSync() {
+      const usernameInput = document.getElementById('syncUsernameInput');
+      const username = usernameInput.value.trim();
+      if (!username) {
+        alert("Please enter a username.");
+        return;
+      }
+
+      const syncBtn = document.getElementById('syncBtn');
+      const syncBtnText = document.getElementById('syncBtnText');
+      const progressWrapper = document.getElementById('syncProgressWrapper');
+      const statusText = document.getElementById('syncStatusText');
+      const progressText = document.getElementById('syncProgressText');
+      const progressBar = document.getElementById('syncProgressBar');
+
+      syncBtn.disabled = true;
+      syncBtnText.textContent = "Syncing...";
+      progressWrapper.classList.remove('hidden');
+      statusText.textContent = `Resolving username "${username}"...`;
+      progressBar.style.width = "5%";
+      progressText.textContent = "5%";
+
+      try {
+        const userId = await fetchUserIdByUsername(username);
+        if (!userId) {
+          throw new Error(`Could not find a user with username "${username}".`);
+        }
+
+        const queue = [];
+        for (const [sport, seasons] of Object.entries(TARGET_SCHEDULE)) {
+          for (const season of seasons) {
+            queue.push({ sport, season });
+          }
+        }
+
+        const total = queue.length;
+        let syncedCardsCount = 0;
+        const currentPortfolio = getPortfolio();
+
+        for (let i = 0; i < total; i++) {
+          const { sport, season } = queue[i];
+          const pct = Math.round(((i + 1) / total) * 90) + 5;
+          statusText.textContent = `Fetching ${sport.toUpperCase()} ${season} (${i + 1}/${total})...`;
+          progressText.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+
+          const passesPayload = await fetchUserPasses(sport, season, userId);
+
+          if (passesPayload) {
+            const passes = Array.isArray(passesPayload) 
+              ? passesPayload 
+              : (passesPayload.passes || passesPayload.items || passesPayload.data || []);
+
+            if (passes.length > 0) {
+              const datasetSport = SPORT_API_TO_DATASET[sport.toLowerCase()] || sport.toUpperCase();
+              const dataset = await getDatasetJson(datasetSport, season);
+
+              passes.forEach(pass => {
+                if (pass.entityType && pass.entityType !== "player") return;
+
+                const pid = String(pass.entityId || pass.entity?.id || pass.id);
+                const playerName = pass.label || (pass.entity ? `${pass.entity.firstName || ''} ${pass.entity.lastName || ''}`.trim() : 'Unknown Player');
+                
+                // Match exact rarity label and multiplier
+                const rarityObj = resolveRarityFromBoostInfo(pass.boostInfo);
+                const mult = rarityObj.value;
+                const cardKey = makeCardKey(pid, datasetSport, season);
+
+                let totalEarnings = 0;
+                let games = 0;
+                let avg = 0;
+                let logs = [];
+
+                if (dataset && dataset.player_earnings && dataset.player_earnings[pid]) {
+                  const pEarnings = dataset.player_earnings[pid];
+                  totalEarnings = pEarnings.total_earnings || 0;
+                  logs = Object.keys(pEarnings)
+                    .filter(k => k !== 'total_earnings' && typeof pEarnings[k] === 'object')
+                    .map(k => pEarnings[k])
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                  games = logs.length;
+                  avg = games > 0 ? Number((totalEarnings / games).toFixed(2)) : 0;
+                } else {
+                  // If not yet available in local dataset, fall back to pass payload earnings
+                  totalEarnings = pass.earned || 0;
+                  games = totalEarnings > 0 ? 1 : 0;
+                  avg = totalEarnings;
+                  if (pass.createdAt) {
+                    logs = [{
+                      date: pass.createdAt.split('T')[0],
+                      earnings: totalEarnings,
+                      id: pass.id
+                    }];
+                  }
+                }
+
+                const existingIndex = currentPortfolio.findIndex(c => c.cardKey === cardKey);
+                const cardObj = {
+                  cardKey,
+                  id: pid,
+                  name: playerName,
+                  sport: datasetSport,
+                  year: season,
+                  multiplier: mult,
+                  total_earnings: totalEarnings,
+                  games_played: games,
+                  avg_per_game: avg,
+                  logs: logs
+                };
+
+                if (existingIndex >= 0) {
+                  currentPortfolio[existingIndex] = cardObj;
+                } else {
+                  currentPortfolio.push(cardObj);
+                }
+                syncedCardsCount++;
+              });
+            }
+          }
+
+          await new Promise(r => setTimeout(r, 250));
+        }
+
+        savePortfolio(currentPortfolio);
+        progressBar.style.width = "100%";
+        progressText.textContent = "100%";
+        statusText.textContent = `Sync complete! Added or updated ${syncedCardsCount} cards.`;
+
+        if (currentMainView === 'portfolio') {
+          renderPortfolioView();
+        }
+      } catch (err) {
+        statusText.textContent = `Sync failed: ${err.message}`;
+        alert(`Portfolio Sync Error: ${err.message}`);
+      } finally {
+        syncBtn.disabled = false;
+        syncBtnText.textContent = "Sync Account";
+      }
+    }
+
+    function clearPortfolio() {
+      if (confirm("Are you sure you want to clear your saved portfolio?")) {
+        savePortfolio([]);
+        if (currentMainView === 'portfolio') {
+          renderPortfolioView();
+        }
+        resetDetailView();
+      }
+    }
 
     let players = [];
     let activePlayer = null;
@@ -445,6 +782,7 @@
       const navPortfolioBtn = document.getElementById('navPortfolioBtn');
       const datasetControls = document.getElementById('datasetControls');
       const portfolioRarityControls = document.getElementById('portfolioRarityControls');
+      const portfolioSyncBanner = document.getElementById('portfolioSyncBanner');
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
@@ -453,6 +791,7 @@
         navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
         datasetControls.classList.remove('hidden');
         portfolioRarityControls.classList.add('hidden');
+        portfolioSyncBanner.classList.add('hidden');
         document.getElementById('viewHeading').textContent = 'Leaderboard';
         document.getElementById('tableHeaderRow').innerHTML = `
           <th class="p-3">Player</th>
@@ -472,6 +811,7 @@
         navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
         datasetControls.classList.add('hidden');
         portfolioRarityControls.classList.remove('hidden');
+        portfolioSyncBanner.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Saved Cards Portfolio';
         document.getElementById('tableHeaderRow').innerHTML = `
           <th class="p-3">Player Card</th>
@@ -540,7 +880,7 @@
           <tr>
             <td colspan="6" class="p-8 text-center text-slate-400 text-sm">
               ${cards.length === 0 
-                ? 'Your portfolio is currently empty. Browse players in the Explore tab and click the bookmark star to save your cards.' 
+                ? 'Your portfolio is currently empty. Use the Auto-Sync tool above or explore players to bookmark cards.' 
                 : 'No saved cards match your search.'}
             </td>
           </tr>
