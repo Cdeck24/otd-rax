@@ -26,15 +26,15 @@
           <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and calendar schedule</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <label for="datasetSelect" class="text-sm text-slate-300 font-medium">Dataset:</label>
-        <select id="datasetSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
-          <option value="data/2022-mlb-data.json">2022 MLB</option>
-          <option value="data/2023-mlb-data.json">2023 MLB</option>
-          <option value="data/2024-mlb-data.json">2024 MLB</option>
-          <option value="data/2024-wnba-data.json">2024 WNBA</option>
-          <option value="data/2025-wnba-data.json">2025 WNBA</option>
-        </select>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
+          <select id="sportSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="yearSelect" class="text-sm text-slate-300 font-medium">Year:</label>
+          <select id="yearSelect" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+        </div>
       </div>
     </header>
 
@@ -150,6 +150,18 @@
   </div>
 
   <script>
+    const availableDatasets = {
+      "MLB": {
+        "2024": "data/2024-mlb-data.json",
+        "2023": "data/2023-mlb-data.json",
+        "2022": "data/2022-mlb-data.json"
+      },
+      "WNBA": {
+        "2025": "data/2025-wnba-data.json",
+        "2024": "data/2024-wnba-data.json"
+      }
+    };
+
     let players = [];
     let activePlayer = null;
     let chartInstance = null;
@@ -157,6 +169,36 @@
     let sortAscending = false;
     let currentCalendarDate = new Date();
     let detailTab = 'calendar';
+
+    function initDropdowns() {
+      const sportSelect = document.getElementById('sportSelect');
+      const sports = Object.keys(availableDatasets);
+      
+      sportSelect.innerHTML = sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
+      updateYearDropdown(sports[0]);
+
+      sportSelect.addEventListener('change', (e) => {
+        updateYearDropdown(e.target.value);
+        triggerDatasetLoad();
+      });
+
+      document.getElementById('yearSelect').addEventListener('change', triggerDatasetLoad);
+    }
+
+    function updateYearDropdown(selectedSport) {
+      const yearSelect = document.getElementById('yearSelect');
+      const years = Object.keys(availableDatasets[selectedSport] || {});
+      yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+    }
+
+    function triggerDatasetLoad() {
+      const sport = document.getElementById('sportSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      const filePath = availableDatasets[sport]?.[year];
+      if (filePath) {
+        loadDataset(filePath);
+      }
+    }
 
     function raxIcon(className = "w-3.5 h-3.5") {
       return `
@@ -491,11 +533,11 @@
       if (chartInstance) chartInstance.destroy();
     }
 
-    document.getElementById('datasetSelect').addEventListener('change', (e) => loadDataset(e.target.value));
     document.getElementById('searchInput').addEventListener('input', renderLeaderboard);
 
-    // Initial load
-    loadDataset(document.getElementById('datasetSelect').value);
+    // Initialize dropdowns and load first dataset
+    initDropdowns();
+    triggerDatasetLoad();
   </script>
 </body>
 </html>
