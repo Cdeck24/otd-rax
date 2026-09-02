@@ -6,6 +6,7 @@
   <title>Player RAX Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Hashids for token generation -->
   <script src="https://cdn.jsdelivr.net/npm/hashids@2.2.10/dist/hashids.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-6 font-sans">
@@ -24,11 +25,12 @@
         </div>
         <div>
           <h1 class="text-3xl font-bold tracking-tight">Player RAX Explorer</h1>
-          <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and calendar schedule</p>
+          <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation, portfolio valuation, and market buy targets</p>
         </div>
       </div>
 
       <div class="flex items-center gap-4 flex-wrap">
+        <!-- Main Navigation Tabs -->
         <nav class="inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-sm font-medium">
           <button
             id="navExploreBtn"
@@ -45,8 +47,17 @@
             <span>My Portfolio</span>
             <span id="portfolioCountBadge" class="px-1.5 py-0.5 text-xs rounded-full bg-zinc-800 text-slate-300 font-mono">0</span>
           </button>
+          <button
+            id="navRecsBtn"
+            onclick="switchMainView('recs')"
+            class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5"
+          >
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span>Recommendations</span>
+          </button>
         </nav>
 
+        <!-- Dataset Selectors (Explore & Recommendations Views) -->
         <div id="datasetControls" class="flex items-center gap-3">
           <div class="flex items-center gap-2">
             <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
@@ -58,6 +69,7 @@
           </div>
         </div>
 
+        <!-- Batch Rarity Tool (Portfolio View) -->
         <div id="portfolioRarityControls" class="hidden flex items-center gap-2">
           <label for="batchRaritySelect" class="text-sm text-slate-300 font-medium">Set All Rarities:</label>
           <select id="batchRaritySelect" onchange="applyBatchRarity(this.value)" class="bg-black border border-zinc-700 text-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
@@ -111,6 +123,48 @@
       </div>
     </section>
 
+    <!-- Recommendation Filter / Scan Banner -->
+    <section id="recommendationsBanner" class="hidden bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-sm font-semibold text-amber-300">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-amber-400"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>Under-Owned Value Scanner</span>
+          </div>
+          <p class="text-xs text-slate-400">Finds players making <span class="text-slate-200 font-semibold">230+ RAX</span> with <span class="text-slate-200 font-semibold">&lt; 1,000 owners</span> in the selected market.</p>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">Min RAX:</label>
+            <input type="number" id="recMinRaxInput" value="230" class="bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs w-20 focus:outline-none focus:ring-1 focus:ring-sky-500" onchange="renderRecommendationsView()">
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">Max Owners:</label>
+            <input type="number" id="recMaxOwnersInput" value="1000" class="bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs w-20 focus:outline-none focus:ring-1 focus:ring-sky-500" onchange="renderRecommendationsView()">
+          </div>
+          <button
+            id="recScanBtn"
+            onclick="scanMarketOwnership()"
+            class="px-4 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 text-xs font-semibold transition flex items-center gap-1.5"
+          >
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+            <span id="recScanBtnText">Scan Live Market</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="recScanProgressWrapper" class="hidden mt-3 pt-3 border-t border-zinc-800 space-y-1.5">
+        <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+          <span id="recScanStatusText">Fetching market ownership pages...</span>
+          <span id="recScanProgressText">0%</span>
+        </div>
+        <div class="w-full bg-black/60 rounded-full h-1.5 overflow-hidden">
+          <div id="recScanProgressBar" class="bg-amber-400 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- Metrics Ribbon -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4">
@@ -134,7 +188,7 @@
     <!-- Main View: Table + Detail Panel -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Leaderboard / Portfolio Column -->
+      <!-- Leaderboard / Portfolio / Recommendations Column -->
       <section class="lg:col-span-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-5 flex flex-col space-y-4">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <h2 id="viewHeading" class="text-lg font-semibold">Leaderboard</h2>
@@ -183,6 +237,7 @@
             ></button>
           </div>
 
+          <!-- In-Detail Card Rarity Selector -->
           <div id="detailRarityWrapper" class="hidden items-center justify-between p-2.5 rounded-lg bg-black/60 border border-zinc-800 text-xs">
             <span class="text-slate-300 font-medium">Card Rarity Tier:</span>
             <select
@@ -196,6 +251,7 @@
             <canvas id="earningsChart"></canvas>
           </div>
 
+          <!-- Schedule View Switcher -->
           <div class="flex items-center justify-between border-b border-zinc-800 pb-2 pt-2">
             <span class="text-sm font-semibold">Schedule & Log</span>
             <div class="inline-flex rounded-lg bg-black p-1 border border-zinc-800 text-xs">
@@ -204,6 +260,7 @@
             </div>
           </div>
 
+          <!-- Calendar View Container -->
           <div id="calendarViewContainer" class="space-y-3">
             <div class="flex items-center justify-between">
               <span id="calendarMonthLabel" class="text-sm font-semibold text-slate-200"></span>
@@ -213,12 +270,14 @@
               </div>
             </div>
 
+            <!-- Days Grid -->
             <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 mb-1">
               <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
             </div>
             <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
           </div>
 
+          <!-- List View Container -->
           <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-zinc-800 rounded-lg flex-1">
             <table class="w-full text-left text-xs">
               <thead class="bg-zinc-950 text-slate-300 sticky top-0 border-b border-zinc-800">
@@ -315,6 +374,7 @@
       return RARITIES[0];
     }
 
+    // Proxy & API Credentials
     const WORKER_PROXY = 'https://rda-worker.coledecker04.workers.dev/';
     const REAL_AUTH_TOKEN = 'xnr5VpW3!ApZk8L2E!4fe6e26f-949f-4936-ae3e-16384878932f';
     const DEFAULT_USER_ID = 'xnr5VpW3';
@@ -339,6 +399,17 @@
       'golf': 'GOLF',
       'ncaam': 'CBB',
       'nfl': 'NFL'
+    };
+
+    const DATASET_TO_SPORT_API = {
+      'MLB': 'mlb',
+      'WNBA': 'wnba',
+      'NBA': 'nba',
+      'FC': 'soccer',
+      'CFB': 'ncaaf',
+      'GOLF': 'golf',
+      'CBB': 'ncaam',
+      'NFL': 'nfl'
     };
 
     const availableDatasets = {
@@ -383,6 +454,7 @@
     };
 
     const datasetJsonCache = {};
+    const ownershipCache = {}; // Cache of { "sport_season": { playerId: countNum } }
     let portfolioCache = null;
     let portfolioKeySet = new Set();
 
@@ -473,6 +545,11 @@
 
       if (currentMainView === 'portfolio') {
         renderPortfolioView();
+      } else if (currentMainView === 'recs') {
+        renderRecommendationsView();
+        if (activePlayer && String(activePlayer.id) === String(p.id)) {
+          updateDetailPortfolioButton();
+        }
       } else {
         renderLeaderboard();
         if (activePlayer && String(activePlayer.id) === String(p.id)) {
@@ -604,6 +681,103 @@
           return fetchUserPasses(sport, season, userId, retries + 1);
         }
         return null;
+      }
+    }
+
+    // Fetches player ownership counts paginating through hotseason endpoint
+    async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
+      let before = 0;
+      let hasMore = true;
+      let pageCount = 0;
+      const maxPages = 40;
+      const ownershipMap = {};
+
+      while (hasMore && pageCount < maxPages) {
+        pageCount++;
+        onProgress(pageCount, maxPages);
+
+        try {
+          const token = generateRequestToken();
+          const deviceUuid = crypto.randomUUID();
+          const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
+          const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
+
+          const res = await fetch(proxyUrl);
+          if (!res.ok) break;
+
+          const data = await res.json();
+          const items = data.feedItems || data.items || [];
+          if (!Array.isArray(items) || items.length === 0) break;
+
+          items.forEach(item => {
+            const playerId = String(item.entityId || item.entity?.id || item.id);
+            const countVal = item.count ?? item.total ?? item.rankDisplay?.injection?.total?.value;
+            if (playerId && countVal !== undefined) {
+              const numVal = typeof countVal === 'number' 
+                ? countVal 
+                : parseInt(String(countVal).replace(/[^0-9]/g, ''), 10) || 0;
+              ownershipMap[playerId] = numVal;
+            }
+          });
+
+          const lastItem = items[items.length - 1];
+          const nextBefore = data.nextBefore ?? (lastItem ? lastItem.id : null);
+
+          if (!nextBefore || nextBefore === before) {
+            hasMore = false;
+          } else {
+            before = nextBefore;
+          }
+
+          await new Promise(r => setTimeout(r, 120));
+        } catch (err) {
+          console.error(`Error fetching ${sport} pass ownership for ${season}:`, err);
+          break;
+        }
+      }
+
+      return ownershipMap;
+    }
+
+    async function scanMarketOwnership() {
+      const sport = document.getElementById('sportSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      const sportApi = DATASET_TO_SPORT_API[sport] || sport.toLowerCase();
+      const cacheKey = `${sportApi}_${year}`;
+
+      const scanBtn = document.getElementById('recScanBtn');
+      const scanBtnText = document.getElementById('recScanBtnText');
+      const progressWrapper = document.getElementById('recScanProgressWrapper');
+      const statusText = document.getElementById('recScanStatusText');
+      const progressText = document.getElementById('recScanProgressText');
+      const progressBar = document.getElementById('recScanProgressBar');
+
+      scanBtn.disabled = true;
+      scanBtnText.textContent = "Scanning...";
+      progressWrapper.classList.remove('hidden');
+      statusText.textContent = `Connecting to ${sport} ${year} market...`;
+      progressBar.style.width = '5%';
+      progressText.textContent = '5%';
+
+      try {
+        const ownershipMap = await fetchAllPlayerOwnership(year, sportApi, (page, max) => {
+          const pct = Math.min(95, Math.round((page / 30) * 100));
+          statusText.textContent = `Fetching market pages (${page})...`;
+          progressText.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+        });
+
+        ownershipCache[cacheKey] = ownershipMap;
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+        statusText.textContent = `Market scanned: found ownership records for ${Object.keys(ownershipMap).length} players.`;
+
+        renderRecommendationsView();
+      } catch (err) {
+        statusText.textContent = `Scan failed: ${err.message}`;
+      } finally {
+        scanBtn.disabled = false;
+        scanBtnText.textContent = "Re-Scan Market";
       }
     }
 
@@ -787,18 +961,25 @@
       currentMainView = view;
       const navExploreBtn = document.getElementById('navExploreBtn');
       const navPortfolioBtn = document.getElementById('navPortfolioBtn');
+      const navRecsBtn = document.getElementById('navRecsBtn');
       const datasetControls = document.getElementById('datasetControls');
       const portfolioRarityControls = document.getElementById('portfolioRarityControls');
       const portfolioSyncBanner = document.getElementById('portfolioSyncBanner');
+      const recommendationsBanner = document.getElementById('recommendationsBanner');
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
+      // Reset base tab styles
+      navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
+      navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
+      navRecsBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
+      portfolioRarityControls.classList.add('hidden');
+      portfolioSyncBanner.classList.add('hidden');
+      recommendationsBanner.classList.add('hidden');
+
       if (view === 'explore') {
         navExploreBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition";
-        navPortfolioBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-2";
         datasetControls.classList.remove('hidden');
-        portfolioRarityControls.classList.add('hidden');
-        portfolioSyncBanner.classList.add('hidden');
         document.getElementById('viewHeading').textContent = 'Leaderboard';
         document.getElementById('tableHeaderRow').innerHTML = `
           <th class="p-3">Player</th>
@@ -813,9 +994,8 @@
         document.getElementById('metricCountLabel').textContent = 'Events Tracked';
         
         triggerDatasetLoad();
-      } else {
+      } else if (view === 'portfolio') {
         navPortfolioBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-2";
-        navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
         datasetControls.classList.add('hidden');
         portfolioRarityControls.classList.remove('hidden');
         portfolioSyncBanner.classList.remove('hidden');
@@ -835,6 +1015,162 @@
         
         updateBatchSelectStyle();
         renderPortfolioView();
+      } else if (view === 'recs') {
+        navRecsBtn.className = "px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5";
+        datasetControls.classList.remove('hidden');
+        recommendationsBanner.classList.remove('hidden');
+        document.getElementById('viewHeading').textContent = 'Recommended Buy Targets';
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th class="p-3">Player</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('owners')">Owners ▾</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('total_earnings')">Total RAX ▾</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('games_played')">Games</th>
+          <th class="p-3 text-right cursor-pointer" onclick="sortTable('avg_per_game')">Avg / Game</th>
+          <th class="p-3 text-center">Portfolio</th>
+        `;
+        document.getElementById('metricPoolLabel').textContent = 'Qualified Value Pool';
+        document.getElementById('metricTopLabel').textContent = 'Top Value Target';
+        document.getElementById('metricAvgLabel').textContent = 'Avg Target RAX';
+        document.getElementById('metricCountLabel').textContent = 'Targets Found';
+
+        renderRecommendationsView();
+      }
+    }
+
+    function renderRecommendationsView() {
+      const tbody = document.getElementById('leaderboardBody');
+      const sport = document.getElementById('sportSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      const sportApi = DATASET_TO_SPORT_API[sport] || sport.toLowerCase();
+      const cacheKey = `${sportApi}_${year}`;
+      const ownershipMap = ownershipCache[cacheKey];
+
+      const minRax = parseInt(document.getElementById('recMinRaxInput').value, 10) || 230;
+      const maxOwners = parseInt(document.getElementById('recMaxOwnersInput').value, 10) || 1000;
+      const query = document.getElementById('searchInput').value.toLowerCase();
+
+      if (!ownershipMap) {
+        document.getElementById('statTotalPool').textContent = '—';
+        document.getElementById('statTopEarner').textContent = '—';
+        document.getElementById('statAvgPlayer').textContent = '—';
+        document.getElementById('statTotalEvents').textContent = '0';
+
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-10 text-center text-slate-400 text-sm space-y-3">
+              <div class="text-amber-300 font-semibold">No live ownership scan data for ${sport} ${year} yet.</div>
+              <p class="text-xs text-slate-500 max-w-md mx-auto">
+                Click <strong class="text-slate-300">"Scan Live Market"</strong> above to retrieve card ownership counts from the shop feed.
+              </p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Filter: Owners < maxOwners AND total_earnings >= minRax
+      let qualified = players.filter(p => {
+        const numOwners = ownershipMap[String(p.id)];
+        if (numOwners === undefined) return false;
+        return numOwners < maxOwners && p.total_earnings >= minRax;
+      }).map(p => ({
+        ...p,
+        owners: ownershipMap[String(p.id)]
+      }));
+
+      // Metrics Ribbon for Qualified Recommendations
+      const totalQualifiedRAX = qualified.reduce((sum, p) => sum + p.total_earnings, 0);
+      const topTarget = [...qualified].sort((a, b) => b.total_earnings - a.total_earnings)[0];
+      const avgTargetRAX = qualified.length > 0 ? (totalQualifiedRAX / qualified.length).toFixed(1) : 0;
+
+      document.getElementById('statTotalPool').innerHTML = `
+        ${raxIcon('w-6 h-6 text-sky-400')}
+        <span>${totalQualifiedRAX.toLocaleString()}</span>
+      `;
+      document.getElementById('statTopEarner').innerHTML = topTarget ? `
+        <span class="text-slate-100">${topTarget.name}</span>
+        <span class="text-xs font-semibold text-amber-300 ml-1.5 inline-flex items-center gap-1">
+          (${topTarget.owners.toLocaleString()} owners)
+        </span>
+      ` : '—';
+      document.getElementById('statAvgPlayer').innerHTML = `
+        ${raxIcon('w-5 h-5 text-sky-400')}
+        <span>${Number(avgTargetRAX).toLocaleString()}</span>
+      `;
+      document.getElementById('statTotalEvents').textContent = qualified.length;
+
+      const filtered = qualified.filter(p => p.name.toLowerCase().includes(query));
+      filtered.sort((a, b) => {
+        const valA = a[sortColumn];
+        const valB = b[sortColumn];
+        return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400 text-sm">
+              No players currently match the criteria (&ge; ${minRax} RAX and &lt; ${maxOwners.toLocaleString()} owners).
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const isSelected = activePlayer && String(activePlayer.id) === String(p.id);
+        const inPortfolio = isCardSaved(p.id, sport, year);
+
+        return `
+          <tr 
+            onclick="selectPlayerById('${p.id}')" 
+            class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-amber-500' : ''}"
+          >
+            <td class="p-3 font-medium text-slate-100">
+              <div>${p.name}</div>
+              <div class="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+                <span>Value Buy</span>
+                <span>•</span>
+                <span>${(p.total_earnings / Math.max(1, p.owners)).toFixed(2)} RAX/Owner</span>
+              </div>
+            </td>
+            <td class="p-3 text-right font-mono font-semibold text-amber-300 whitespace-nowrap">
+              ${p.owners.toLocaleString()}
+            </td>
+            <td class="p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3.5 h-3.5 text-sky-400')}
+                <span>${p.total_earnings.toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-3 text-right text-slate-300">${p.games_played}</td>
+            <td class="p-3 text-right text-slate-400 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-slate-500')}
+                <span>${p.avg_per_game.toFixed(2)}</span>
+              </span>
+            </td>
+            <td class="p-3 text-center" onclick="event.stopPropagation()">
+              <button 
+                onclick="toggleCardFromExplore('${p.id}')" 
+                class="p-1.5 rounded-lg border transition ${inPortfolio 
+                  ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 hover:bg-sky-500/30' 
+                  : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
+                title="${inPortfolio ? 'Remove from portfolio' : 'Save to portfolio'}"
+              >
+                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
+                  ${inPortfolio 
+                    ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' 
+                    : '<path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>'}
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (!activePlayer || !filtered.some(x => String(x.id) === String(activePlayer.id))) {
+        selectPlayer(filtered[0]);
       }
     }
 
@@ -993,7 +1329,7 @@
     }
 
     function triggerDatasetLoad() {
-      if (currentMainView !== 'explore') return;
+      if (currentMainView === 'portfolio') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
       const filePath = availableDatasets[sport]?.[year];
@@ -1064,8 +1400,12 @@
         };
       });
 
-      renderMetrics();
-      renderLeaderboard();
+      if (currentMainView === 'recs') {
+        renderRecommendationsView();
+      } else {
+        renderMetrics();
+        renderLeaderboard();
+      }
 
       if (players.length > 0) {
         selectPlayer(players[0]);
@@ -1170,6 +1510,8 @@
       
       if (currentMainView === 'explore') {
         renderLeaderboard();
+      } else if (currentMainView === 'recs') {
+        renderRecommendationsView();
       } else {
         renderPortfolioView();
       }
@@ -1416,6 +1758,8 @@
       searchDebounceTimer = setTimeout(() => {
         if (currentMainView === 'explore') {
           renderLeaderboard();
+        } else if (currentMainView === 'recs') {
+          renderRecommendationsView();
         } else {
           renderPortfolioView();
         }
