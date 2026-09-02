@@ -23,7 +23,7 @@
         </div>
         <div>
           <h1 class="text-3xl font-bold tracking-tight">Player RAX Explorer</h1>
-          <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and game logs</p>
+          <p class="text-slate-400 text-sm mt-0.5">Multi-sport RAX accumulation and calendar schedule</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -72,7 +72,7 @@
           />
         </div>
 
-        <div class="overflow-x-auto max-h-[600px] border border-slate-700/60 rounded-lg">
+        <div class="overflow-x-auto max-h-[640px] border border-slate-700/60 rounded-lg">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 text-slate-300 select-none">
               <tr>
@@ -92,7 +92,7 @@
         <h2 class="text-lg font-semibold">Player Breakdown</h2>
         
         <div id="noSelectionNotice" class="text-sm text-slate-400 my-auto text-center py-12">
-          Click any player row in the leaderboard to display their RAX trend and game logs.
+          Click any player row in the leaderboard to display their earnings calendar and logs.
         </div>
 
         <div id="playerDetailContent" class="space-y-4 hidden flex-1 flex flex-col">
@@ -101,18 +101,43 @@
             <div id="detailPlayerMeta" class="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap"></div>
           </div>
 
-          <div class="h-44 w-full">
+          <div class="h-36 w-full">
             <canvas id="earningsChart"></canvas>
           </div>
 
-          <div class="text-sm font-semibold pt-2">Individual Game Logs</div>
-          <div class="overflow-y-auto max-h-60 border border-slate-700/60 rounded-lg flex-1">
+          <!-- Schedule View Switcher -->
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2 pt-2">
+            <span class="text-sm font-semibold">Schedule & Log</span>
+            <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-700 text-xs">
+              <button id="tabCalendarBtn" onclick="switchDetailTab('calendar')" class="px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-amber-400">Calendar</button>
+              <button id="tabListBtn" onclick="switchDetailTab('list')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">List</button>
+            </div>
+          </div>
+
+          <!-- Calendar View Container -->
+          <div id="calendarViewContainer" class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span id="calendarMonthLabel" class="text-sm font-semibold text-slate-200"></span>
+              <div class="flex items-center gap-1">
+                <button onclick="changeCalendarMonth(-1)" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-sm px-2">‹</button>
+                <button onclick="changeCalendarMonth(1)" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-sm px-2">›</button>
+              </div>
+            </div>
+
+            <!-- Days Grid -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 mb-1">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
+          </div>
+
+          <!-- List View Container (Hidden by default) -->
+          <div id="listViewContainer" class="hidden overflow-y-auto max-h-64 border border-slate-700/60 rounded-lg flex-1">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-800 text-slate-300 sticky top-0 border-b border-slate-700">
                 <tr>
-                  <th class="p-2">Date</th>
-                  <th class="p-2">Event ID</th>
-                  <th class="p-2 text-right">RAX</th>
+                  <th class="p-2.5">Date</th>
+                  <th class="p-2.5 text-right">Earned</th>
                 </tr>
               </thead>
               <tbody id="gameLogsBody" class="divide-y divide-slate-800"></tbody>
@@ -129,6 +154,8 @@
     let chartInstance = null;
     let sortColumn = 'total_earnings';
     let sortAscending = false;
+    let currentCalendarDate = new Date();
+    let detailTab = 'calendar';
 
     function raxIcon(className = "w-3.5 h-3.5") {
       return `
@@ -139,6 +166,17 @@
           <path d="M225.6,452.1L50.7,103C18.9,145.7,0,198.6,0,256c0,121.7,85,223.6,198.8,249.6L225.6,452.1z"></path>
         </svg>
       `;
+    }
+
+    function formatCalendarDateString(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
     }
 
     async function loadDataset(fileName) {
@@ -171,7 +209,7 @@
         const avg = games > 0 ? Number((total / games).toFixed(2)) : 0;
 
         return {
-          id: pInfo.player_id || id,
+          id: id,
           name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
           total_earnings: total,
           games_played: games,
@@ -277,8 +315,6 @@
 
       document.getElementById('detailPlayerName').textContent = p.name;
       document.getElementById('detailPlayerMeta').innerHTML = `
-        <span>ID: ${p.id}</span>
-        <span>•</span>
         <span>${p.games_played} Games Logged</span>
         <span>•</span>
         <span class="inline-flex items-center gap-1 text-amber-400 font-semibold">
@@ -286,13 +322,13 @@
         </span>
       `;
 
+      // Render formatted calendar date list
       const logsTbody = document.getElementById('gameLogsBody');
       const reversedLogs = [...p.logs].reverse();
       logsTbody.innerHTML = reversedLogs.map(l => `
         <tr class="hover:bg-slate-800">
-          <td class="p-2 text-slate-300">${l.date}</td>
-          <td class="p-2 font-mono text-slate-400">${l.id}</td>
-          <td class="p-2 text-right font-mono text-amber-400 font-semibold whitespace-nowrap">
+          <td class="p-2.5 text-slate-300 font-medium">${formatCalendarDateString(l.date)}</td>
+          <td class="p-2.5 text-right font-mono text-amber-400 font-semibold whitespace-nowrap">
             <span class="inline-flex items-center gap-1 justify-end">
               ${raxIcon('w-3 h-3 text-amber-400')}
               <span>${l.earnings}</span>
@@ -301,8 +337,95 @@
         </tr>
       `).join('');
 
+      // Set calendar default view to last played game date
+      if (p.logs.length > 0) {
+        const lastLog = p.logs[p.logs.length - 1];
+        const [y, m, d] = lastLog.date.split('-').map(Number);
+        currentCalendarDate = new Date(y, m - 1, 1);
+      }
+
+      renderCalendarView();
       renderChart(p.logs);
       renderLeaderboard();
+    }
+
+    function switchDetailTab(tab) {
+      detailTab = tab;
+      const calBtn = document.getElementById('tabCalendarBtn');
+      const listBtn = document.getElementById('tabListBtn');
+      const calContainer = document.getElementById('calendarViewContainer');
+      const listContainer = document.getElementById('listViewContainer');
+
+      if (tab === 'calendar') {
+        calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-amber-400";
+        listBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+        calContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+      } else {
+        listBtn.className = "px-2.5 py-1 rounded-md font-medium bg-amber-500/20 text-amber-400";
+        calBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+        listContainer.classList.remove('hidden');
+        calContainer.classList.add('hidden');
+      }
+    }
+
+    function changeCalendarMonth(delta) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+      renderCalendarView();
+    }
+
+    function renderCalendarView() {
+      if (!activePlayer) return;
+
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+
+      document.getElementById('calendarMonthLabel').textContent = currentCalendarDate.toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      // Build day-to-earnings lookup map (sums double-headers if on same date)
+      const dayEarningsMap = {};
+      activePlayer.logs.forEach(l => {
+        dayEarningsMap[l.date] = (dayEarningsMap[l.date] || 0) + l.earnings;
+      });
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      // Blank filler cells before start of month
+      for (let i = 0; i < firstDayIndex; i++) {
+        grid.innerHTML += `<div class="h-10 rounded border border-transparent"></div>`;
+      }
+
+      // Day cells
+      for (let day = 1; day <= totalDays; day++) {
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateKey = `${year}-${monthStr}-${dayStr}`;
+        const hasGame = dateKey in dayEarningsMap;
+        const earnings = dayEarningsMap[dateKey];
+
+        if (hasGame) {
+          grid.innerHTML += `
+            <div class="h-10 rounded-md bg-amber-500/10 border border-amber-500/30 flex flex-col items-center justify-between p-1 transition hover:bg-amber-500/20" title="${formatCalendarDateString(dateKey)}: ${earnings} RAX">
+              <span class="text-[10px] text-slate-300 font-semibold leading-none">${day}</span>
+              <span class="text-[10px] text-amber-400 font-bold leading-none flex items-center gap-0.5">
+                ${raxIcon('w-2.5 h-2.5 text-amber-400')} ${earnings}
+              </span>
+            </div>
+          `;
+        } else {
+          grid.innerHTML += `
+            <div class="h-10 rounded-md bg-slate-900/40 border border-slate-800 flex items-start justify-center p-1 text-slate-600">
+              <span class="text-[10px] leading-none">${day}</span>
+            </div>
+          `;
+        }
+      }
     }
 
     function renderChart(logs) {
@@ -310,7 +433,11 @@
       if (chartInstance) chartInstance.destroy();
 
       let runningTotal = 0;
-      const labels = logs.map(l => l.date);
+      const labels = logs.map(l => {
+        const [y, m, d] = l.date.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+
       const cumulative = logs.map(l => {
         runningTotal += l.earnings;
         return runningTotal;
@@ -321,7 +448,6 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Cumulative RAX',
             data: cumulative,
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -338,7 +464,7 @@
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (context) => `${context.parsed.y.toLocaleString()} RAX`
+                label: (context) => `${context.parsed.y.toLocaleString()} RAX Total`
               }
             }
           },
