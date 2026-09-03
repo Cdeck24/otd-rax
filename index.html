@@ -960,15 +960,6 @@
       }
     }
 
-    let players = [];
-    let activePlayer = null;
-    let chartInstance = null;
-    let sortColumn = 'total_earnings';
-    let sortAscending = false;
-    let currentCalendarDate = new Date();
-    let detailTab = 'calendar';
-    let currentMainView = 'explore';
-
     function switchMainView(view) {
       currentMainView = view;
       const navExploreBtn = document.getElementById('navExploreBtn');
@@ -1045,7 +1036,11 @@
         document.getElementById('metricAvgLabel').textContent = 'Avg Target RAX';
         document.getElementById('metricCountLabel').textContent = 'Targets Found';
 
-        renderRecommendationsView();
+        if (players.length === 0) {
+          triggerDatasetLoad();
+        } else {
+          renderRecommendationsView();
+        }
       }
     }
 
