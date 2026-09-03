@@ -707,101 +707,102 @@
     }
 
     // Fetches player ownership counts paginating through hotseason endpoint
-    async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
-      let before = 0;
-      let hasMore = true;
-      let pageCount = 0;
-      const maxPages = 40;
-      const ownershipMap = {};
+    // Fetches player ownership counts paginating through hotseason endpoint
+async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
+  let before = 0;
+  let hasMore = true;
+  let pageCount = 0;
+  const maxPages = 40;
+  const ownershipMap = {};
 
-      while (hasMore && pageCount < maxPages) {
-        pageCount++;
-        onProgress(pageCount, maxPages);
+  while (hasMore && pageCount < maxPages) {
+    pageCount++;
+    onProgress(pageCount, maxPages);
 
-        try {
-          const token = generateRequestToken();
-          const deviceUuid = crypto.randomUUID();
-          const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
-          const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
+    try {
+      const token = generateRequestToken();
+      const deviceUuid = crypto.randomUUID();
+      const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
+      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
 
-          const res = await fetch(proxyUrl);
-          if (!res.ok) break;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) break;
 
-          const data = await res.json();
-          const items = data.feedItems || data.items || [];
-          if (!Array.isArray(items) || items.length === 0) break;
+      const data = await res.json();
+      const items = data.items || data.feedItems || [];
+      if (!Array.isArray(items) || items.length === 0) break;
 
-          items.forEach(item => {
-            const playerId = String(item.entityId || item.entity?.id || item.id);
-            const countVal = item.count ?? item.total ?? item.rankDisplay?.injection?.total?.value;
-            if (playerId && countVal !== undefined) {
-              const numVal = typeof countVal === 'number' 
-                ? countVal 
-                : parseInt(String(countVal).replace(/[^0-9]/g, ''), 10) || 0;
-              ownershipMap[playerId] = numVal;
-            }
-          });
-
-          const lastItem = items[items.length - 1];
-          const nextBefore = data.nextBefore ?? (lastItem ? lastItem.id : null);
-
-          if (!nextBefore || nextBefore === before) {
-            hasMore = false;
-          } else {
-            before = nextBefore;
-          }
-
-          await new Promise(r => setTimeout(r, 120));
-        } catch (err) {
-          console.error(`Error fetching ${sport} pass ownership for ${season}:`, err);
-          break;
+      items.forEach(item => {
+        const playerId = String(item.id || item.entityId || item.entity?.id);
+        const countVal = item.value ?? item.count ?? item.total;
+        if (playerId && countVal !== undefined) {
+          const numVal = typeof countVal === 'number' 
+            ? countVal 
+            : parseInt(String(countVal).replace(/[^0-9]/g, ''), 10) || 0;
+          ownershipMap[playerId] = numVal;
         }
+      });
+
+      // Advance offset counter by page item count
+      before += items.length;
+      if (items.length < 15) {
+        hasMore = false;
       }
 
-      return ownershipMap;
+      await new Promise(r => setTimeout(r, 120));
+    } catch (err) {
+      console.error(`Error fetching ${sport} pass ownership for ${season}:`, err);
+      break;
     }
+  }
+
+  return ownershipMap;
+}
 
     async function scanMarketOwnership() {
-      const sport = document.getElementById('sportSelect').value;
-      const year = document.getElementById('yearSelect').value;
-      const sportApi = DATASET_TO_SPORT_API[sport] || sport.toLowerCase();
-      const cacheKey = `${sportApi}_${year}`;
+  const sport = document.getElementById('sportSelect').value;
+  const year = document.getElementById('yearSelect').value;
+  const sportApi = DATASET_TO_SPORT_API[sport] || sport.toLowerCase();
+  const cacheKey = `${sportApi}_${year}`;
 
-      const scanBtn = document.getElementById('recScanBtn');
-      const scanBtnText = document.getElementById('recScanBtnText');
-      const progressWrapper = document.getElementById('recScanProgressWrapper');
-      const statusText = document.getElementById('recScanStatusText');
-      const progressText = document.getElementById('recScanProgressText');
-      const progressBar = document.getElementById('recScanProgressBar');
+  // Ensure dataset is loaded so player stats exist to cross-reference
+  await triggerDatasetLoad();
 
-      scanBtn.disabled = true;
-      scanBtnText.textContent = "Scanning...";
-      progressWrapper.classList.remove('hidden');
-      statusText.textContent = `Connecting to ${sport} ${year} market...`;
-      progressBar.style.width = '5%';
-      progressText.textContent = '5%';
+  const scanBtn = document.getElementById('recScanBtn');
+  const scanBtnText = document.getElementById('recScanBtnText');
+  const progressWrapper = document.getElementById('recScanProgressWrapper');
+  const statusText = document.getElementById('recScanStatusText');
+  const progressText = document.getElementById('recScanProgressText');
+  const progressBar = document.getElementById('recScanProgressBar');
 
-      try {
-        const ownershipMap = await fetchAllPlayerOwnership(year, sportApi, (page, max) => {
-          const pct = Math.min(95, Math.round((page / 30) * 100));
-          statusText.textContent = `Fetching market pages (${page})...`;
-          progressText.textContent = `${pct}%`;
-          progressBar.style.width = `${pct}%`;
-        });
+  scanBtn.disabled = true;
+  scanBtnText.textContent = "Scanning...";
+  progressWrapper.classList.remove('hidden');
+  statusText.textContent = `Connecting to ${sport} ${year} market...`;
+  progressBar.style.width = '5%';
+  progressText.textContent = '5%';
 
-        ownershipCache[cacheKey] = ownershipMap;
-        progressBar.style.width = '100%';
-        progressText.textContent = '100%';
-        statusText.textContent = `Market scanned: found ownership records for ${Object.keys(ownershipMap).length} players.`;
+  try {
+    const ownershipMap = await fetchAllPlayerOwnership(year, sportApi, (page, max) => {
+      const pct = Math.min(95, Math.round((page / 30) * 100));
+      statusText.textContent = `Fetching market pages (${page})...`;
+      progressText.textContent = `${pct}%`;
+      progressBar.style.width = `${pct}%`;
+    });
 
-        renderRecommendationsView();
-      } catch (err) {
-        statusText.textContent = `Scan failed: ${err.message}`;
-      } finally {
-        scanBtn.disabled = false;
-        scanBtnText.textContent = "Re-Scan Market";
-      }
-    }
+    ownershipCache[cacheKey] = ownershipMap;
+    progressBar.style.width = '100%';
+    progressText.textContent = '100%';
+    statusText.textContent = `Market scanned: found ownership records for ${Object.keys(ownershipMap).length} players.`;
+
+    renderRecommendationsView();
+  } catch (err) {
+    statusText.textContent = `Scan failed: ${err.message}`;
+  } finally {
+    scanBtn.disabled = false;
+    scanBtnText.textContent = "Re-Scan Market";
+  }
+}
 
     async function getDatasetJson(sportLabel, season) {
       const key = `${sportLabel}_${season}`;
