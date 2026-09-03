@@ -33,18 +33,18 @@
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
         <!-- Main Navigation Tabs -->
-        <nav class="grid grid-cols-3 sm:inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-xs sm:text-sm font-medium">
+        <nav class="grid grid-cols-4 sm:inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-xs sm:text-sm font-medium">
           <button
             id="navExploreBtn"
             onclick="switchMainView('explore')"
-            class="px-2.5 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center"
+            class="px-2 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center"
           >
             Explore
           </button>
           <button
             id="navPortfolioBtn"
             onclick="switchMainView('portfolio')"
-            class="px-2.5 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5"
+            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5"
           >
             <span>Portfolio</span>
             <span id="portfolioCountBadge" class="px-1.5 py-0.2 text-[10px] sm:text-xs rounded-full bg-zinc-800 text-slate-300 font-mono">0</span>
@@ -52,10 +52,18 @@
           <button
             id="navRecsBtn"
             onclick="switchMainView('recs')"
-            class="px-2.5 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1"
+            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1"
           >
             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-amber-400 shrink-0"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span>Recs</span>
+          </button>
+          <button
+            id="navPackBtn"
+            onclick="switchMainView('pack')"
+            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1"
+          >
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-purple-400 shrink-0"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.65-.5-.65C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1h-2.22l1.35-1.76C14.31 4.09 14.64 4 15 4zm-6 0c.36 0 .69.09.87.24L11.22 6H9c-.55 0-1-.45-1-1s.45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76V14h2V8.76L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
+            <span>Pack</span>
           </button>
         </nav>
 
@@ -568,6 +576,11 @@
         renderPortfolioView();
       } else if (currentMainView === 'recs') {
         renderRecommendationsView();
+        if (activePlayer && String(activePlayer.id) === String(p.id)) {
+          updateDetailPortfolioButton();
+        }
+      } else if (currentMainView === 'pack') {
+        renderPackView();
         if (activePlayer && String(activePlayer.id) === String(p.id)) {
           updateDetailPortfolioButton();
         }
@@ -1472,6 +1485,8 @@
         renderLeaderboard();
       } else if (currentMainView === 'recs') {
         renderRecommendationsView();
+      } else if (currentMainView === 'pack') {
+        renderPackView();
       } else {
         renderPortfolioView();
       }
@@ -1623,6 +1638,7 @@
       const navExploreBtn = document.getElementById('navExploreBtn');
       const navPortfolioBtn = document.getElementById('navPortfolioBtn');
       const navRecsBtn = document.getElementById('navRecsBtn');
+      const navPackBtn = document.getElementById('navPackBtn');
       const datasetControls = document.getElementById('datasetControls');
       const portfolioRarityControls = document.getElementById('portfolioRarityControls');
       const portfolioSyncBanner = document.getElementById('portfolioSyncBanner');
@@ -1630,15 +1646,17 @@
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
-      navExploreBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition text-center";
-      navPortfolioBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
-      navRecsBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1";
+      navExploreBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition text-center";
+      navPortfolioBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
+      navRecsBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1";
+      if (navPackBtn) navPackBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1";
+      
       portfolioRarityControls.classList.add('hidden');
       portfolioSyncBanner.classList.add('hidden');
       recommendationsBanner.classList.add('hidden');
 
       if (view === 'explore') {
-        navExploreBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center";
+        navExploreBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center";
         datasetControls.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Leaderboard';
         document.getElementById('tableHeaderRow').innerHTML = `
@@ -1655,7 +1673,7 @@
         
         triggerDatasetLoad();
       } else if (view === 'portfolio') {
-        navPortfolioBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center justify-center gap-1.5";
+        navPortfolioBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center justify-center gap-1.5";
         datasetControls.classList.add('hidden');
         portfolioRarityControls.classList.remove('hidden');
         portfolioSyncBanner.classList.remove('hidden');
@@ -1676,7 +1694,7 @@
         updateBatchSelectStyle();
         renderPortfolioView();
       } else if (view === 'recs') {
-        navRecsBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center justify-center gap-1";
+        navRecsBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center justify-center gap-1";
         datasetControls.classList.remove('hidden');
         recommendationsBanner.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Recommended Buy Targets';
@@ -1698,9 +1716,163 @@
         } else {
           renderRecommendationsView();
         }
+      } else if (view === 'pack') {
+        if (navPackBtn) navPackBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 transition flex items-center justify-center gap-1";
+        datasetControls.classList.remove('hidden');
+        document.getElementById('viewHeading').textContent = 'Profitable Pack to Iconic Targets';
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th class="p-2.5 sm:p-3">Player</th>
+          <th class="p-2.5 sm:p-3 text-right cursor-pointer whitespace-nowrap" onclick="sortTable('total_earnings')">Base RAX ▾</th>
+          <th class="p-2.5 sm:p-3 text-right cursor-pointer whitespace-nowrap" onclick="sortTable('iconic_earnings')">Iconic 1 (150x) ▾</th>
+          <th class="p-2.5 sm:p-3 text-right whitespace-nowrap">Pack Cost</th>
+          <th class="p-2.5 sm:p-3 text-right cursor-pointer whitespace-nowrap" onclick="sortTable('profit')">Net Profit ▾</th>
+          <th class="p-2.5 sm:p-3 text-center whitespace-nowrap">Portfolio</th>
+        `;
+        document.getElementById('metricPoolLabel').textContent = 'Iconic Profit Pool';
+        document.getElementById('metricTopLabel').textContent = 'Top Packing Target';
+        document.getElementById('metricAvgLabel').textContent = 'Avg Net Profit';
+        document.getElementById('metricCountLabel').textContent = 'Profitable Players';
+
+        if (players.length === 0) {
+          triggerDatasetLoad();
+        } else {
+          renderPackView();
+        }
       }
     }
+    function renderPackView() {
+      const tbody = document.getElementById('leaderboardBody');
+      const sport = document.getElementById('sportSelect').value;
+      const year = document.getElementById('yearSelect').value;
+      const query = document.getElementById('searchInput').value.toLowerCase();
 
+      // 3,380 rating / 10 min rating per pack = 338 packs * 200 RAX = 67,600 RAX cost
+      const PACK_COST = 67600;
+      const ICONIC_MULT = 150;
+
+      if (!players || players.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-6 sm:p-8 text-center text-slate-400 text-xs sm:text-sm space-y-1.5">
+              <div class="text-purple-300 font-semibold">No dataset loaded for ${sport} ${year}.</div>
+              <p class="text-slate-500">Ensure the season data file exists.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let qualified = players.map(p => {
+        const iconicEarnings = p.total_earnings * ICONIC_MULT;
+        const profit = iconicEarnings - PACK_COST;
+        return {
+          ...p,
+          iconic_earnings: iconicEarnings,
+          pack_cost: PACK_COST,
+          profit: profit
+        };
+      }).filter(p => p.profit > 0);
+
+      const totalProfitPool = qualified.reduce((sum, p) => sum + p.profit, 0);
+      const topTarget = [...qualified].sort((a, b) => b.profit - a.profit)[0];
+      const avgProfit = qualified.length > 0 ? (totalProfitPool / qualified.length).toFixed(0) : 0;
+
+      document.getElementById('statTotalPool').innerHTML = `
+        ${raxIcon('w-4 h-4 sm:w-6 sm:h-6 text-emerald-400')}
+        <span>${totalProfitPool.toLocaleString()}</span>
+      `;
+      document.getElementById('statTopEarner').innerHTML = topTarget ? `
+        <span class="text-slate-100">${topTarget.name}</span>
+        <span class="text-[11px] sm:text-xs font-semibold text-emerald-400 ml-1 inline-flex items-center gap-1">
+          (+${topTarget.profit.toLocaleString()} RAX)
+        </span>
+      ` : '—';
+      document.getElementById('statAvgPlayer').innerHTML = `
+        ${raxIcon('w-4 h-4 sm:w-5 sm:h-5 text-emerald-400')}
+        <span>+${Number(avgProfit).toLocaleString()}</span>
+      `;
+      document.getElementById('statTotalEvents').textContent = qualified.length;
+
+      const filtered = qualified.filter(p => p.name.toLowerCase().includes(query));
+      filtered.sort((a, b) => {
+        let valA = a[sortColumn] !== undefined ? a[sortColumn] : a.profit;
+        let valB = b[sortColumn] !== undefined ? b[sortColumn] : b.profit;
+        return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-6 sm:p-8 text-center text-slate-400 text-xs sm:text-sm">
+              No players in this season achieve a profit after packing to Iconic (requires > 450 Base RAX).
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const isSelected = activePlayer && String(activePlayer.id) === String(p.id);
+        const inPortfolio = isCardSaved(p.id, sport, year);
+
+        return `
+          <tr 
+            onclick="selectPlayerById('${p.id}')" 
+            class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-purple-500' : ''}"
+          >
+            <td class="p-2.5 sm:p-3 font-medium text-slate-100 whitespace-nowrap">
+              <div>${p.name}</div>
+              <div class="text-[10px] sm:text-[11px] text-purple-400 font-mono flex items-center gap-1 mt-0.5">
+                <span>Iconic 1 Target</span>
+                <span>•</span>
+                <span>${((p.profit / PACK_COST) * 100).toFixed(0)}% ROI</span>
+              </div>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono text-slate-300 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-slate-400')}
+                <span>${p.total_earnings.toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono text-purple-400 font-semibold whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-purple-400')}
+                <span>${p.iconic_earnings.toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono text-rose-400 whitespace-nowrap">
+              -67,600
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono text-emerald-400 font-bold whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 text-emerald-400')}
+                <span>+${p.profit.toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-2.5 sm:p-3 text-center" onclick="event.stopPropagation()">
+              <button 
+                onclick="toggleCardFromExplore('${p.id}')" 
+                class="p-1 sm:p-1.5 rounded-lg border transition ${inPortfolio 
+                  ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 hover:bg-sky-500/30' 
+                  : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
+                title="${inPortfolio ? 'Remove from portfolio' : 'Save to portfolio'}"
+              >
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current">
+                  ${inPortfolio 
+                    ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' 
+                    : '<path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>'}
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (!activePlayer || !filtered.some(x => String(x.id) === String(activePlayer.id))) {
+        selectPlayer(filtered[0]);
+      }
+    }
+    
     function initDropdowns() {
       const sportSelect = document.getElementById('sportSelect');
       const sports = Object.keys(availableDatasets);
@@ -1743,6 +1915,8 @@
       if (currentLoadedFile === fileName && players.length > 0) {
         if (currentMainView === 'recs') {
           renderRecommendationsView();
+        } else if (currentMainView === 'pack') {
+          renderPackView();
         } else {
           renderMetrics();
           renderLeaderboard();
@@ -1762,6 +1936,8 @@
         players = [];
         if (currentMainView === 'recs') {
           renderRecommendationsView();
+        } else if (currentMainView === 'pack') {
+          renderPackView();
         } else {
           renderLeaderboard();
         }
@@ -1798,6 +1974,8 @@
 
       if (currentMainView === 'recs') {
         renderRecommendationsView();
+      } else if (currentMainView === 'pack') {
+        renderPackView();
       } else {
         renderMetrics();
         renderLeaderboard();
@@ -1818,6 +1996,8 @@
           renderLeaderboard();
         } else if (currentMainView === 'recs') {
           renderRecommendationsView();
+        } else if (currentMainView === 'pack') {
+          renderPackView();
         } else {
           renderPortfolioView();
         }
