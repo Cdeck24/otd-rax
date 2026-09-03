@@ -265,6 +265,7 @@
             <div id="otdSubNav" class="hidden inline-flex rounded-lg bg-black p-0.5 border border-zinc-800 text-[11px] sm:text-xs">
               <button id="otdSubRosterBtn" onclick="switchOtdSubView('roster')" class="px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400">Optimal Roster</button>
               <button id="otdSubCalBtn" onclick="switchOtdSubView('calendar')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">365-Day Calendar</button>
+              <button id="otdSubFillerBtn" onclick="switchOtdSubView('filler')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">Filler Optimizer</button>
             </div>
           </div>
           <input
@@ -294,6 +295,33 @@
           <div id="portCalGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
         </div>
 
+        <!-- OTD Filler Builder Panel -->
+        <div id="otdFillerContainer" class="hidden flex-col space-y-4">
+          <div class="p-3.5 bg-black/60 border border-zinc-800 rounded-xl space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="text-sm font-bold text-slate-100">Base Cards Selection</div>
+                <div class="text-xs text-slate-400">Choose cards you currently own. Fillers will be auto-selected to max out every day around them.</div>
+              </div>
+              <button 
+                onclick="runFillerOptimization()" 
+                class="px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+                <span>Generate Optimal Fillers</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <select id="otdFillerCardSelect" class="flex-1 bg-zinc-900 border border-zinc-700 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"></select>
+              <button onclick="addCardToFillerBase()" class="px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold hover:bg-sky-500/30 shrink-0">Add Card</button>
+              <button onclick="importPortfolioToFillerBase()" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-slate-300 border border-zinc-700 text-xs font-semibold hover:bg-zinc-700 shrink-0">Import Portfolio</button>
+            </div>
+
+            <div id="otdLockedCardsList" class="flex flex-wrap gap-1.5 pt-1"></div>
+          </div>
+        </div>
+        
         <!-- Table Container -->
         <div id="leaderboardTableWrapper" class="overflow-x-auto max-h-[460px] sm:max-h-[640px] border border-zinc-800 rounded-lg -mx-0.5">
           <table class="w-full text-left text-xs sm:text-sm">
@@ -1860,38 +1888,52 @@
       otdSubView = subView;
       const rosterBtn = document.getElementById('otdSubRosterBtn');
       const calBtn = document.getElementById('otdSubCalBtn');
+      const fillerBtn = document.getElementById('otdSubFillerBtn');
       const tableWrapper = document.getElementById('leaderboardTableWrapper');
       const calContainer = document.getElementById('portfolioCalendarContainer');
+      const fillerContainer = document.getElementById('otdFillerContainer');
       const singleDetail = document.getElementById('playerDetailContent');
       const dayDetail = document.getElementById('portfolioDayDetailContent');
       const noSelect = document.getElementById('noSelectionNotice');
 
-      if (subView === 'roster') {
-        if (rosterBtn) rosterBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
-        if (calBtn) calBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
-        if (tableWrapper) tableWrapper.classList.remove('hidden');
-        if (calContainer) { calContainer.classList.add('hidden'); calContainer.classList.remove('flex'); }
-        if (dayDetail) { dayDetail.classList.add('hidden'); dayDetail.classList.remove('flex'); }
+      rosterBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+      calBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+      if (fillerBtn) fillerBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
 
+      tableWrapper.classList.add('hidden');
+      calContainer.classList.add('hidden');
+      calContainer.classList.remove('flex');
+      fillerContainer.classList.add('hidden');
+      fillerContainer.classList.remove('flex');
+      dayDetail.classList.add('hidden');
+      dayDetail.classList.remove('flex');
+
+      if (subView === 'roster') {
+        rosterBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
+        tableWrapper.classList.remove('hidden');
         if (activePlayer) {
           singleDetail?.classList.remove('hidden');
           noSelect?.classList.add('hidden');
         } else {
           noSelect?.classList.remove('hidden');
         }
-      } else {
-        if (calBtn) calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
-        if (rosterBtn) rosterBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
-        if (tableWrapper) tableWrapper.classList.add('hidden');
-        if (calContainer) { calContainer.classList.remove('hidden'); calContainer.classList.add('flex'); }
-        if (singleDetail) singleDetail.classList.add('hidden');
-        if (noSelect) noSelect.classList.add('hidden');
-        if (dayDetail) { dayDetail.classList.remove('hidden'); dayDetail.classList.add('flex'); }
-
+      } else if (subView === 'calendar') {
+        calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
+        calContainer.classList.remove('hidden');
+        calContainer.classList.add('flex');
+        singleDetail?.classList.add('hidden');
+        noSelect?.classList.add('hidden');
+        dayDetail.classList.remove('hidden');
+        dayDetail.classList.add('flex');
         renderPortfolioCalendar();
+      } else if (subView === 'filler') {
+        if (fillerBtn) fillerBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
+        fillerContainer.classList.remove('hidden');
+        fillerContainer.classList.add('flex');
+        populateFillerDropdown();
+        renderLockedFillerBadges();
       }
     }
-
     function changePortCalMonth(delta) {
       portCalDate.setMonth(portCalDate.getMonth() + delta);
       renderPortfolioCalendar();
@@ -2060,7 +2102,33 @@
       }
     }
 
-    async function generateOptimalOtdSetup() {
+    const OTD_CACHE_KEY = 'rax_otd_iconic_setup_v1';
+
+    function loadOtdCache() {
+      try {
+        const raw = localStorage.getItem(OTD_CACHE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.roster) && parsed.roster.length > 0) {
+          optimalOtdRoster = parsed.roster;
+          optimalOtdDailyMap = parsed.dailyMap || {};
+          otdAnnualProjectedRax = parsed.annualRax || 0;
+          return true;
+        }
+      } catch (e) {
+        console.warn("OTD cache parse error", e);
+      }
+      return false;
+    }
+
+    async function generateOptimalOtdSetup(forceRefresh = false) {
+      if (!forceRefresh && loadOtdCache()) {
+        const saveBtn = document.getElementById('otdSaveAllBtn');
+        if (saveBtn) saveBtn.classList.remove('hidden');
+        renderOtdView();
+        return;
+      }
+
       const runBtn = document.getElementById('otdRunBtn');
       const runBtnText = document.getElementById('otdRunBtnText');
       const progressWrapper = document.getElementById('otdProgressWrapper');
@@ -2075,20 +2143,19 @@
       if (progressWrapper) progressWrapper.classList.remove('hidden');
 
       try {
-        // 1. Load all season datasets
         await loadAllDatasets((curr, total, msg) => {
-          const pct = Math.round((curr / total) * 40);
+          const pct = Math.round((curr / total) * 50);
           if (statusText) statusText.textContent = msg;
           if (progressText) progressText.textContent = `${pct}%`;
           if (progressBar) progressBar.style.width = `${pct}%`;
         });
 
-        if (statusText) statusText.textContent = "Indexing active performers across all sports...";
-        if (progressText) progressText.textContent = "45%";
-        if (progressBar) progressBar.style.width = "45%";
-        await new Promise(r => setTimeout(r, 10));
+        if (statusText) statusText.textContent = "Indexing candidates at Iconic 1 (150x)...";
+        if (progressText) progressText.textContent = "55%";
+        if (progressBar) progressBar.style.width = "55%";
+        await new Promise(r => setTimeout(r, 20));
 
-        // 2. Pre-filter players (ignoring sub-50 RAX cards eliminates 80% of useless calculations without sacrificing optimal ceiling)
+        const ICONIC_MULT = 150;
         const candidateMap = new Map();
 
         for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
@@ -2098,7 +2165,7 @@
 
           for (const [pid, pInfo] of Object.entries(config)) {
             const pEarnings = earnings[pid];
-            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings < 50) continue;
+            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings <= 0) continue;
 
             const cardKey = makeCardKey(pid, sport, year);
             const logs = Object.keys(pEarnings)
@@ -2108,15 +2175,14 @@
             if (logs.length === 0) continue;
 
             const dayMap = {};
-            let maxSingleGame = 0;
             logs.forEach(l => {
               if (!l.date || !l.earnings || l.earnings <= 0) return;
               const mmdd = l.date.slice(5);
-              if (l.earnings > maxSingleGame) maxSingleGame = l.earnings;
-              if (!dayMap[mmdd] || l.earnings > dayMap[mmdd].earnings) {
+              const iconicVal = Math.round(l.earnings * ICONIC_MULT);
+              if (!dayMap[mmdd] || iconicVal > dayMap[mmdd].rax) {
                 dayMap[mmdd] = {
                   sport: sport,
-                  rax: l.earnings,
+                  rax: iconicVal,
                   baseEarnings: l.earnings,
                   cardKey: cardKey,
                   playerName: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
@@ -2132,19 +2198,23 @@
               name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
               sport: sport,
               year: year,
-              multiplier: 1,
-              total_earnings: pEarnings.total_earnings,
+              multiplier: ICONIC_MULT,
+              total_earnings: pEarnings.total_earnings * ICONIC_MULT,
+              base_earnings: pEarnings.total_earnings,
               games_played: logs.length,
-              avg_per_game: Number((pEarnings.total_earnings / logs.length).toFixed(2)),
+              avg_per_game: Number(((pEarnings.total_earnings * ICONIC_MULT) / logs.length).toFixed(2)),
               logs: logs,
-              dayMap: dayMap,
-              maxSingleGame: maxSingleGame
+              dayMap: dayMap
             });
           }
         }
 
+        if (statusText) statusText.textContent = "Selecting optimal lineup pillars (Iconic 150x)...";
+        if (progressText) progressText.textContent = "65%";
+        if (progressBar) progressBar.style.width = "65%";
+        await new Promise(r => setTimeout(r, 20));
+
         let availableCandidates = Array.from(candidateMap.values());
-        // Sort initially by total season earnings
         availableCandidates.sort((a, b) => b.total_earnings - a.total_earnings);
 
         const chosenRoster = [];
@@ -2157,18 +2227,12 @@
           return evaluateDailyClaims(testList).totalRax;
         }
 
-        if (statusText) statusText.textContent = "Selecting optimal lineup pillars (non-blocking)...";
-        if (progressText) progressText.textContent = "50%";
-        if (progressBar) progressBar.style.width = "50%";
-
         let step = 0;
-        const maxRosterCap = 120; // Natural saturation point for 365 days
-
-        while (availableCandidates.length > 0 && chosenRoster.length < maxRosterCap) {
+        while (availableCandidates.length > 0) {
           step++;
           let bestCard = null;
           let maxMarginalGain = 0;
-          const survivingCandidates = [];
+          const nextCandidates = [];
 
           for (let i = 0; i < availableCandidates.length; i++) {
             const card = availableCandidates[i];
@@ -2186,7 +2250,7 @@
             }
 
             if (marginalGain > 0) {
-              survivingCandidates.push(card);
+              nextCandidates.push(card);
               if (marginalGain > maxMarginalGain) {
                 maxMarginalGain = marginalGain;
                 bestCard = card;
@@ -2194,7 +2258,6 @@
             }
           }
 
-          // No remaining card can improve any calendar day
           if (!bestCard || maxMarginalGain <= 0) break;
 
           chosenKeys.add(bestCard.cardKey);
@@ -2207,39 +2270,46 @@
           }
 
           chosenRoster.push(bestCard);
-          availableCandidates = survivingCandidates;
+          availableCandidates = nextCandidates;
 
-          // Yield to the browser every 2 cards to prevent UI freezing
           if (step % 2 === 0) {
-            const progress = Math.min(95, 50 + Math.round((step / 60) * 45));
+            const progress = Math.min(95, 65 + Math.round((step / 60) * 30));
             if (progressText) progressText.textContent = `${progress}%`;
             if (progressBar) progressBar.style.width = `${progress}%`;
-            if (statusText) statusText.textContent = `Locked ${chosenRoster.length} cards (Current annual RAX: ${evaluateAnnualSum().toLocaleString()})...`;
+            if (statusText) statusText.textContent = `Optimized ${chosenRoster.length} Iconic cards...`;
             await new Promise(r => setTimeout(r, 0));
           }
         }
 
-        function evaluateAnnualSum() {
-          let sum = 0;
-          for (let m = 1; m <= 12; m++) {
-            const totalDays = new Date(2024, m, 0).getDate();
-            const mStr = String(m).padStart(2, '0');
-            for (let d = 1; d <= totalDays; d++) {
-              const dStr = String(d).padStart(2, '0');
-              const mmdd = `${mStr}-${dStr}`;
-              sum += evaluateDailyClaims(activeDailyLineup[mmdd] || []).totalRax;
-            }
+        let annualSum = 0;
+        for (let m = 1; m <= 12; m++) {
+          const totalDays = new Date(2024, m, 0).getDate();
+          const mStr = String(m).padStart(2, '0');
+          for (let d = 1; d <= totalDays; d++) {
+            const dStr = String(d).padStart(2, '0');
+            const mmdd = `${mStr}-${dStr}`;
+            annualSum += evaluateDailyClaims(activeDailyLineup[mmdd] || []).totalRax;
           }
-          return sum;
         }
 
         optimalOtdRoster = chosenRoster;
         optimalOtdDailyMap = activeDailyLineup;
-        otdAnnualProjectedRax = evaluateAnnualSum();
+        otdAnnualProjectedRax = annualSum;
+
+        // Save so calculation only runs once
+        try {
+          localStorage.setItem(OTD_CACHE_KEY, JSON.stringify({
+            roster: chosenRoster,
+            dailyMap: activeDailyLineup,
+            annualRax: annualSum
+          }));
+        } catch (e) {
+          console.warn("Storage quota full, cached in memory only.");
+        }
 
         if (progressBar) progressBar.style.width = "100%";
         if (progressText) progressText.textContent = "100%";
-        if (statusText) statusText.textContent = `Optimized! Generated ${chosenRoster.length} cards for maximum RAX with zero bench overlap.`;
+        if (statusText) statusText.textContent = `Completed! ${chosenRoster.length} Iconic cards locked for maximum annual RAX.`;
 
         const saveBtn = document.getElementById('otdSaveAllBtn');
         if (saveBtn) saveBtn.classList.remove('hidden');
@@ -2398,6 +2468,265 @@
       }
     }
 
+    let otdFillerLockedKeys = new Set();
+    let otdFillerCombinedRoster = [];
+
+    function populateFillerDropdown() {
+      const select = document.getElementById('otdFillerCardSelect');
+      if (!select) return;
+      
+      const options = [];
+      for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
+        const [sport, year] = cacheKey.split('_');
+        const config = dataset.player_config || {};
+        const earnings = dataset.player_earnings || {};
+
+        for (const [pid, pInfo] of Object.entries(config)) {
+          const pEarnings = earnings[pid];
+          if (!pEarnings || !pEarnings.total_earnings) continue;
+          const cardKey = makeCardKey(pid, sport, year);
+          options.push({
+            cardKey,
+            label: `${pInfo.first_name || ''} ${pInfo.last_name || ''} (${sport} '${String(year).slice(-2)}) - ${pEarnings.total_earnings} Base RAX`
+          });
+        }
+      }
+
+      options.sort((a, b) => a.label.localeCompare(b.label));
+      select.innerHTML = options.map(o => `<option value="${o.cardKey}">${o.label}</option>`).join('');
+    }
+
+    function addCardToFillerBase(cardKey) {
+      const key = cardKey || document.getElementById('otdFillerCardSelect')?.value;
+      if (!key) return;
+      otdFillerLockedKeys.add(key);
+      renderLockedFillerBadges();
+    }
+
+    function importPortfolioToFillerBase() {
+      const current = getPortfolio();
+      current.forEach(c => otdFillerLockedKeys.add(c.cardKey));
+      renderLockedFillerBadges();
+    }
+
+    function removeCardFromFillerBase(cardKey) {
+      otdFillerLockedKeys.delete(cardKey);
+      renderLockedFillerBadges();
+    }
+
+    function renderLockedFillerBadges() {
+      const container = document.getElementById('otdLockedCardsList');
+      if (!container) return;
+      if (otdFillerLockedKeys.size === 0) {
+        container.innerHTML = `<span class="text-slate-500 text-xs italic">No base cards added yet.</span>`;
+        return;
+      }
+
+      container.innerHTML = Array.from(otdFillerLockedKeys).map(k => {
+        const [sport, year, pid] = k.split('_');
+        const dataset = datasetJsonCache[`${sport}_${year}`];
+        const pInfo = dataset?.player_config?.[pid];
+        const name = pInfo ? `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim() : pid;
+
+        return `
+          <span class="inline-flex items-center gap-1 bg-zinc-800 border border-zinc-700 px-2 py-1 rounded text-xs text-slate-200">
+            <span class="text-sky-400 font-bold">${sport}</span>
+            <span>${name}</span>
+            <button onclick="removeCardFromFillerBase('${k}')" class="text-slate-400 hover:text-rose-400 ml-1">×</button>
+          </span>
+        `;
+      }).join('');
+    }
+
+    async function runFillerOptimization() {
+      if (otdFillerLockedKeys.size === 0) {
+        alert("Please add at least one card to your base cards.");
+        return;
+      }
+
+      await loadAllDatasets();
+
+      const ICONIC_MULT = 150;
+      const activeDailyLineup = {};
+      const lockedRoster = [];
+      const chosenKeys = new Set(otdFillerLockedKeys);
+
+      // 1. Lock in the base cards at 150x Iconic
+      otdFillerLockedKeys.forEach(cardKey => {
+        const [sport, year, pid] = cardKey.split('_');
+        const dataset = datasetJsonCache[`${sport}_${year}`];
+        if (!dataset) return;
+
+        const pInfo = dataset.player_config?.[pid];
+        const pEarnings = dataset.player_earnings?.[pid];
+        if (!pInfo || !pEarnings) return;
+
+        const logs = Object.keys(pEarnings)
+          .filter(k => k !== 'total_earnings' && typeof pEarnings[k] === 'object')
+          .map(k => pEarnings[k]);
+
+        const dayMap = {};
+        logs.forEach(l => {
+          if (!l.date || !l.earnings) return;
+          const mmdd = l.date.slice(5);
+          const iconicVal = Math.round(l.earnings * ICONIC_MULT);
+          if (!dayMap[mmdd] || iconicVal > dayMap[mmdd].rax) {
+            dayMap[mmdd] = {
+              sport: sport,
+              rax: iconicVal,
+              baseEarnings: l.earnings,
+              cardKey: cardKey,
+              playerName: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+              year: year,
+              originalDate: l.date,
+              isBase: true
+            };
+          }
+        });
+
+        const cardObj = {
+          cardKey,
+          id: pid,
+          name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+          sport,
+          year,
+          multiplier: ICONIC_MULT,
+          total_earnings: pEarnings.total_earnings * ICONIC_MULT,
+          games_played: logs.length,
+          avg_per_game: Number(((pEarnings.total_earnings * ICONIC_MULT) / logs.length).toFixed(2)),
+          logs,
+          dayMap,
+          isBase: true
+        };
+
+        for (const [mmdd, item] of Object.entries(dayMap)) {
+          if (!activeDailyLineup[mmdd]) activeDailyLineup[mmdd] = [];
+          activeDailyLineup[mmdd].push(item);
+        }
+
+        lockedRoster.push(cardObj);
+      });
+
+      // 2. Index all other potential fillers
+      const candidateList = [];
+      for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
+        const [sport, year] = cacheKey.split('_');
+        const config = dataset.player_config || {};
+        const earnings = dataset.player_earnings || {};
+
+        for (const [pid, pInfo] of Object.entries(config)) {
+          const cardKey = makeCardKey(pid, sport, year);
+          if (chosenKeys.has(cardKey)) continue;
+
+          const pEarnings = earnings[pid];
+          if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings <= 0) continue;
+
+          const logs = Object.keys(pEarnings)
+            .filter(k => k !== 'total_earnings' && typeof pEarnings[k] === 'object')
+            .map(k => pEarnings[k]);
+
+          const dayMap = {};
+          logs.forEach(l => {
+            if (!l.date || !l.earnings) return;
+            const mmdd = l.date.slice(5);
+            const iconicVal = Math.round(l.earnings * ICONIC_MULT);
+            if (!dayMap[mmdd] || iconicVal > dayMap[mmdd].rax) {
+              dayMap[mmdd] = {
+                sport: sport,
+                rax: iconicVal,
+                baseEarnings: l.earnings,
+                cardKey: cardKey,
+                playerName: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+                year: year,
+                originalDate: l.date,
+                isBase: false
+              };
+            }
+          });
+
+          candidateList.push({
+            cardKey,
+            id: pid,
+            name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+            sport,
+            year,
+            multiplier: ICONIC_MULT,
+            total_earnings: pEarnings.total_earnings * ICONIC_MULT,
+            games_played: logs.length,
+            avg_per_game: Number(((pEarnings.total_earnings * ICONIC_MULT) / logs.length).toFixed(2)),
+            logs,
+            dayMap,
+            isBase: false
+          });
+        }
+      }
+
+      function evaluateDayRax(mmdd, extraCandidate = null) {
+        const baseList = activeDailyLineup[mmdd] || [];
+        const testList = extraCandidate ? baseList.concat(extraCandidate) : baseList;
+        return evaluateDailyClaims(testList).totalRax;
+      }
+
+      // 3. Greedily fill around the user's base cards
+      let available = candidateList;
+      const fillerRoster = [];
+
+      while (available.length > 0) {
+        let bestCard = null;
+        let maxMarginalGain = 0;
+        const next = [];
+
+        for (const card of available) {
+          if (chosenKeys.has(card.cardKey)) continue;
+          let gain = 0;
+          for (const mmdd of Object.keys(card.dayMap)) {
+            const curRax = evaluateDayRax(mmdd);
+            const newRax = evaluateDayRax(mmdd, card.dayMap[mmdd]);
+            if (newRax > curRax) gain += (newRax - curRax);
+          }
+
+          if (gain > 0) {
+            next.push(card);
+            if (gain > maxMarginalGain) {
+              maxMarginalGain = gain;
+              bestCard = card;
+            }
+          }
+        }
+
+        if (!bestCard || maxMarginalGain <= 0) break;
+
+        chosenKeys.add(bestCard.cardKey);
+        bestCard.marginal_otd_rax = maxMarginalGain;
+        bestCard.overlap_pct = Math.max(0, Math.round((1 - (maxMarginalGain / bestCard.total_earnings)) * 100));
+
+        for (const [mmdd, item] of Object.entries(bestCard.dayMap)) {
+          if (!activeDailyLineup[mmdd]) activeDailyLineup[mmdd] = [];
+          activeDailyLineup[mmdd].push(item);
+        }
+
+        fillerRoster.push(bestCard);
+        available = next;
+      }
+
+      optimalOtdRoster = lockedRoster.concat(fillerRoster);
+      optimalOtdDailyMap = activeDailyLineup;
+
+      let annualSum = 0;
+      for (let m = 1; m <= 12; m++) {
+        const totalDays = new Date(2024, m, 0).getDate();
+        const mStr = String(m).padStart(2, '0');
+        for (let d = 1; d <= totalDays; d++) {
+          const dStr = String(d).padStart(2, '0');
+          annualSum += evaluateDailyClaims(activeDailyLineup[`${mStr}-${dStr}`] || []).totalRax;
+        }
+      }
+      otdAnnualProjectedRax = annualSum;
+
+      switchOtdSubView('roster');
+      renderOtdView();
+    }
+    
     function switchMainView(view) {
       currentMainView = view;
       const navExploreBtn = document.getElementById('navExploreBtn');
