@@ -1673,12 +1673,15 @@
     }
     // Calculates optimal daily claims: max 2 per sport + 1 best wildcard from any sport
     function getOptimalClaimsForDate(dateKey, cards = getPortfolio()) {
+      const targetMonthDay = dateKey.slice(5); // Extracts "MM-DD"
       const candidates = [];
+      
       cards.forEach(c => {
         const mult = c.multiplier || 1;
         if (!c.logs || !Array.isArray(c.logs)) return;
         c.logs.forEach(l => {
-          if (l.date === dateKey) {
+          // Matches any game on the same calendar day regardless of season year
+          if (l.date && l.date.slice(5) === targetMonthDay) {
             candidates.push({
               cardKey: c.cardKey,
               playerId: c.id,
@@ -1687,7 +1690,8 @@
               year: c.year,
               multiplier: mult,
               baseEarnings: l.earnings,
-              rax: Math.round(l.earnings * mult)
+              rax: Math.round(l.earnings * mult),
+              originalDate: l.date
             });
           }
         });
@@ -1893,11 +1897,13 @@
         <div class="p-2.5 rounded-lg bg-black/60 border border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
           <div class="min-w-0">
             <div class="font-bold text-slate-100 truncate">${c.playerName}</div>
-            <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400 font-mono">
+            <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400 font-mono flex-wrap">
               <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${c.sport}</span>
               <span>${c.multiplier}x Rarity</span>
               <span>•</span>
               <span>Base: ${c.baseEarnings}</span>
+              <span>•</span>
+              <span class="text-slate-300 font-semibold">Game: ${c.originalDate}</span>
             </div>
           </div>
           <div class="flex flex-col items-end shrink-0 gap-1">
