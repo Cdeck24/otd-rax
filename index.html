@@ -2144,20 +2144,21 @@
 
       try {
         await loadAllDatasets((curr, total, msg) => {
-          const pct = Math.round((curr / total) * 50);
+          const pct = Math.round((curr / total) * 45);
           if (statusText) statusText.textContent = msg;
           if (progressText) progressText.textContent = `${pct}%`;
           if (progressBar) progressBar.style.width = `${pct}%`;
         });
 
-        if (statusText) statusText.textContent = "Indexing candidates at Iconic 1 (150x)...";
-        if (progressText) progressText.textContent = "55%";
-        if (progressBar) progressBar.style.width = "55%";
+        if (statusText) statusText.textContent = "Pre-filtering players at Iconic 1 (150x)...";
+        if (progressText) progressText.textContent = "50%";
+        if (progressBar) progressBar.style.width = "50%";
         await new Promise(r => setTimeout(r, 20));
 
         const ICONIC_MULT = 150;
         const candidateMap = new Map();
 
+        // Cards must have at least 25 base RAX to be considered (filters thousands of 0-1 game non-factors)
         for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
           const [sport, year] = cacheKey.split('_');
           const config = dataset.player_config || {};
@@ -2165,7 +2166,7 @@
 
           for (const [pid, pInfo] of Object.entries(config)) {
             const pEarnings = earnings[pid];
-            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings <= 0) continue;
+            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings < 25) continue;
 
             const cardKey = makeCardKey(pid, sport, year);
             const logs = Object.keys(pEarnings)
@@ -2210,8 +2211,8 @@
         }
 
         if (statusText) statusText.textContent = "Selecting optimal lineup pillars (Iconic 150x)...";
-        if (progressText) progressText.textContent = "65%";
-        if (progressBar) progressBar.style.width = "65%";
+        if (progressText) progressText.textContent = "60%";
+        if (progressBar) progressBar.style.width = "60%";
         await new Promise(r => setTimeout(r, 20));
 
         let availableCandidates = Array.from(candidateMap.values());
@@ -2228,7 +2229,10 @@
         }
 
         let step = 0;
-        while (availableCandidates.length > 0) {
+        const MAX_ROSTER_LIMIT = 200;      // Hard ceiling
+        const MIN_MARGINAL_GAIN = 1000;    // Stops when next card adds < 1,000 Iconic RAX (~7 base RAX all year)
+
+        while (availableCandidates.length > 0 && chosenRoster.length < MAX_ROSTER_LIMIT) {
           step++;
           let bestCard = null;
           let maxMarginalGain = 0;
@@ -2249,7 +2253,7 @@
               }
             }
 
-            if (marginalGain > 0) {
+            if (marginalGain >= MIN_MARGINAL_GAIN) {
               nextCandidates.push(card);
               if (marginalGain > maxMarginalGain) {
                 maxMarginalGain = marginalGain;
@@ -2258,7 +2262,8 @@
             }
           }
 
-          if (!bestCard || maxMarginalGain <= 0) break;
+          // Stop when diminishing returns are reached
+          if (!bestCard || maxMarginalGain < MIN_MARGINAL_GAIN) break;
 
           chosenKeys.add(bestCard.cardKey);
           bestCard.marginal_otd_rax = maxMarginalGain;
@@ -2272,11 +2277,11 @@
           chosenRoster.push(bestCard);
           availableCandidates = nextCandidates;
 
-          if (step % 2 === 0) {
-            const progress = Math.min(95, 65 + Math.round((step / 60) * 30));
+          if (step % 4 === 0) {
+            const progress = Math.min(95, 60 + Math.round((chosenRoster.length / 160) * 35));
             if (progressText) progressText.textContent = `${progress}%`;
             if (progressBar) progressBar.style.width = `${progress}%`;
-            if (statusText) statusText.textContent = `Optimized ${chosenRoster.length} Iconic cards...`;
+            if (statusText) statusText.textContent = `Locked ${chosenRoster.length} Iconic cards...`;
             await new Promise(r => setTimeout(r, 0));
           }
         }
@@ -2296,7 +2301,7 @@
         optimalOtdDailyMap = activeDailyLineup;
         otdAnnualProjectedRax = annualSum;
 
-        // Save so calculation only runs once
+        // Cache so it only ever runs once
         try {
           localStorage.setItem(OTD_CACHE_KEY, JSON.stringify({
             roster: chosenRoster,
