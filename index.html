@@ -466,9 +466,19 @@
     };
 
     const datasetJsonCache = {};
-    const ownershipCache = {}; // Cache of { "sport_season": { playerId: countNum } }
+    const ownershipCache = {};
     let portfolioCache = null;
     let portfolioKeySet = new Set();
+    let currentLoadedFile = '';
+
+    let players = [];
+    let activePlayer = null;
+    let chartInstance = null;
+    let sortColumn = 'total_earnings';
+    let sortAscending = false;
+    let currentCalendarDate = new Date();
+    let detailTab = 'calendar';
+    let currentMainView = 'explore';
 
     function getPortfolio() {
       if (portfolioCache === null) {
