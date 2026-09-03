@@ -57,7 +57,7 @@
           </button>
         </nav>
 
-        <!-- Dataset Selectors (Explore & Recommendations Views) -->
+        <!-- Dataset Selectors -->
         <div id="datasetControls" class="flex items-center gap-3">
           <div class="flex items-center gap-2">
             <label for="sportSelect" class="text-sm text-slate-300 font-medium">Sport:</label>
@@ -757,7 +757,6 @@
                 let avg = 0;
                 let logs = [];
 
-                // Sourced strictly from local JSON files
                 if (dataset && dataset.player_config && dataset.player_config[pid]) {
                   const pConfig = dataset.player_config[pid];
                   playerName = `${pConfig.first_name || ''} ${pConfig.last_name || ''}`.trim();
@@ -819,12 +818,12 @@
       }
     }
 
-    // Loops through before={before} pagination until nothing is left in items
+    // Corrected ownership fetching matching before=20 pagination loop
     async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
       let before = 0;
       let hasMore = true;
       let pageCount = 0;
-      const maxPages = 40;
+      const maxPages = 50;
       const ownershipMap = {};
 
       while (hasMore && pageCount < maxPages) {
@@ -1012,6 +1011,7 @@
         triggerDatasetLoad();
       } else if (view === 'portfolio') {
         navPortfolioBtn.className = "px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-2";
+        navExploreBtn.className = "px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
         datasetControls.classList.add('hidden');
         portfolioRarityControls.classList.remove('hidden');
         portfolioSyncBanner.classList.remove('hidden');
