@@ -33,26 +33,26 @@
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
         <!-- Main Navigation Tabs -->
-        <nav class="grid grid-cols-4 sm:inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-xs sm:text-sm font-medium">
+        <nav class="grid grid-cols-5 sm:inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1 text-[11px] sm:text-sm font-medium">
           <button
             id="navExploreBtn"
             onclick="switchMainView('explore')"
-            class="px-2 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center"
+            class="px-1.5 sm:px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center truncate"
           >
             Explore
           </button>
           <button
             id="navPortfolioBtn"
             onclick="switchMainView('portfolio')"
-            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5"
+            class="px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate"
           >
             <span>Portfolio</span>
-            <span id="portfolioCountBadge" class="px-1.5 py-0.2 text-[10px] sm:text-xs rounded-full bg-zinc-800 text-slate-300 font-mono">0</span>
+            <span id="portfolioCountBadge" class="px-1 py-0.2 text-[10px] rounded-full bg-zinc-800 text-slate-300 font-mono">0</span>
           </button>
           <button
             id="navRecsBtn"
             onclick="switchMainView('recs')"
-            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1"
+            class="px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate"
           >
             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-amber-400 shrink-0"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span>Recs</span>
@@ -60,10 +60,18 @@
           <button
             id="navPackBtn"
             onclick="switchMainView('pack')"
-            class="px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1"
+            class="px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate"
           >
             <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-fuchsia-500 shrink-0"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.65-.5-.65C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1h-2.22l1.35-1.76C14.31 4.09 14.64 4 15 4zm-6 0c.36 0 .69.09.87.24L11.22 6H9c-.55 0-1-.45-1-1s.45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76V14h2V8.76L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
             <span>Pack</span>
+          </button>
+          <button
+            id="navOtdBtn"
+            onclick="switchMainView('otd')"
+            class="px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate"
+          >
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-emerald-400 shrink-0"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            <span>OTD</span>
           </button>
         </nav>
 
@@ -86,6 +94,65 @@
         </div>
       </div>
     </header>
+
+    <!-- Optimal OTD Configuration Banner -->
+    <section id="otdBanner" class="hidden bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 sm:p-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-emerald-400 shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5zm4 4h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+            <span>All-Sport Cross-Season OTD Optimizer</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Greedy marginal-gain solver across all seasons. Eliminates bench redundancy, enforces the <span class="text-slate-200 font-semibold">2/Sport + 1 Wildcard</span> cap, and maximizes 365-day annual RAX.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+          <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
+            <label class="text-xs text-slate-400 whitespace-nowrap">Roster Size:</label>
+            <select id="otdTargetSizeSelect" class="w-full sm:w-28 bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500">
+              <option value="25">25 Cards</option>
+              <option value="50" selected>50 Cards</option>
+              <option value="75">75 Cards</option>
+              <option value="100">100 Cards</option>
+              <option value="150">150 Cards</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
+            <label class="text-xs text-slate-400 whitespace-nowrap">Min Base RAX:</label>
+            <input type="number" id="otdMinRaxInput" value="150" class="w-full sm:w-20 bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500">
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              id="otdRunBtn"
+              onclick="generateOptimalOtdSetup()"
+              class="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 shrink-0"
+            >
+              <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+              <span id="otdRunBtnText">Run Optimizer</span>
+            </button>
+            <button
+              id="otdSaveAllBtn"
+              onclick="saveAllOtdToPortfolio()"
+              class="hidden px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 text-xs font-medium transition whitespace-nowrap"
+            >
+              Add All to Portfolio
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="otdProgressWrapper" class="hidden mt-3 pt-3 border-t border-zinc-800 space-y-1.5">
+        <div class="flex items-center justify-between text-[11px] sm:text-xs font-mono text-slate-400">
+          <span id="otdStatusText" class="truncate pr-2">Scanning all sports and seasons...</span>
+          <span id="otdProgressText" class="shrink-0">0%</span>
+        </div>
+        <div class="w-full bg-black/60 rounded-full h-1.5 overflow-hidden">
+          <div id="otdProgressBar" class="bg-emerald-400 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Portfolio Account Sync Panel -->
     <section id="portfolioSyncBanner" class="hidden bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 sm:p-4">
@@ -200,7 +267,7 @@
     <!-- Main View: Table + Detail Panel -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
-      <!-- Leaderboard / Portfolio / Recommendations Column -->
+      <!-- Leaderboard / Portfolio / Recommendations / OTD Column -->
       <section class="lg:col-span-2 bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 sm:p-5 flex flex-col space-y-3 sm:space-y-4">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2.5 sm:gap-3">
           <div class="flex items-center gap-2.5 flex-wrap">
@@ -209,6 +276,11 @@
             <div id="portfolioSubNav" class="hidden inline-flex rounded-lg bg-black p-0.5 border border-zinc-800 text-[11px] sm:text-xs">
               <button id="portSubCardsBtn" onclick="switchPortfolioSubView('cards')" class="px-2.5 py-1 rounded-md font-medium bg-sky-500/20 text-sky-400">Cards</button>
               <button id="portSubCalBtn" onclick="switchPortfolioSubView('calendar')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">Optimal Calendar</button>
+            </div>
+            <!-- OTD Sub-Nav Toggle -->
+            <div id="otdSubNav" class="hidden inline-flex rounded-lg bg-black p-0.5 border border-zinc-800 text-[11px] sm:text-xs">
+              <button id="otdSubRosterBtn" onclick="switchOtdSubView('roster')" class="px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400">Optimal Roster</button>
+              <button id="otdSubCalBtn" onclick="switchOtdSubView('calendar')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200">365-Day Calendar</button>
             </div>
           </div>
           <input
@@ -219,7 +291,7 @@
           />
         </div>
 
-        <!-- Master Portfolio Calendar Container -->
+        <!-- Master Portfolio / OTD Calendar Container -->
         <div id="portfolioCalendarContainer" class="hidden flex-col space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 flex-wrap">
@@ -238,7 +310,7 @@
           <div id="portCalGrid" class="grid grid-cols-7 gap-1 text-xs"></div>
         </div>
 
-        <!-- Table Container (Includes leaderboardTableWrapper ID) -->
+        <!-- Table Container -->
         <div id="leaderboardTableWrapper" class="overflow-x-auto max-h-[460px] sm:max-h-[640px] border border-zinc-800 rounded-lg -mx-0.5">
           <table class="w-full text-left text-xs sm:text-sm">
             <thead class="bg-zinc-950 sticky top-0 border-b border-zinc-800 text-slate-300 select-none z-10">
@@ -530,8 +602,14 @@
     let detailTab = 'calendar';
     let currentMainView = 'explore';
     let portfolioSubView = 'cards';
+    let otdSubView = 'roster';
     let portCalDate = new Date();
     let selectedPortDateKey = null;
+
+    // OTD Optimizer State
+    let optimalOtdRoster = [];
+    let optimalOtdDailyMap = {};
+    let otdAnnualProjectedRax = 0;
 
     function getPortfolio() {
       if (portfolioCache === null) {
@@ -587,10 +665,10 @@
     }
 
     function toggleCardFromExplore(pId) {
-      const p = players.find(x => String(x.id) === String(pId));
+      const p = (currentMainView === 'otd' ? optimalOtdRoster : players).find(x => String(x.id) === String(pId));
       if (!p) return;
-      const sport = document.getElementById('sportSelect').value;
-      const year = document.getElementById('yearSelect').value;
+      const sport = p.sport || document.getElementById('sportSelect').value;
+      const year = p.year || document.getElementById('yearSelect').value;
       toggleCardInPortfolio(p, sport, year);
     }
 
@@ -627,6 +705,11 @@
         }
       } else if (currentMainView === 'pack') {
         renderPackView();
+        if (activePlayer && String(activePlayer.id) === String(p.id)) {
+          updateDetailPortfolioButton();
+        }
+      } else if (currentMainView === 'otd') {
+        renderOtdView();
         if (activePlayer && String(activePlayer.id) === String(p.id)) {
           updateDetailPortfolioButton();
         }
@@ -782,7 +865,6 @@
       }
     }
 
-    // Auto-sync that pulls RAX data strictly from local JSON
     async function startPortfolioSync() {
       const usernameInput = document.getElementById('syncUsernameInput');
       const username = usernameInput.value.trim();
@@ -915,7 +997,6 @@
       }
     }
 
-    // Pagination loop reading item.value as number of owners
     async function fetchAllPlayerOwnership(season, sport = 'golf', onProgress = () => {}) {
       let before = 0;
       let hasMore = true;
@@ -1416,12 +1497,12 @@
     }
 
     function selectPortfolioCard(cardKey) {
-      const card = getPortfolio().find(c => c.cardKey === cardKey);
+      const card = (currentMainView === 'otd' ? optimalOtdRoster : getPortfolio()).find(c => c.cardKey === cardKey);
       if (card) selectPlayer(card);
     }
 
     function selectPlayerById(id) {
-      const p = players.find(x => String(x.id) === String(id));
+      const p = (currentMainView === 'otd' ? optimalOtdRoster : players).find(x => String(x.id) === String(id));
       if (p) selectPlayer(p);
     }
 
@@ -1435,7 +1516,7 @@
       const rInfo = getRarityInfo(mult);
 
       const sportTag = p.sport ? `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold font-mono">${p.sport} '${String(p.year).slice(-2)}</span> • ` : '';
-      const multBadge = (currentMainView === 'portfolio' || p.cardKey)
+      const multBadge = (currentMainView === 'portfolio' && p.cardKey)
         ? `<span class="px-2 py-0.5 rounded border ${rInfo.bg} ${rInfo.border} ${rInfo.text} font-bold text-[10px] sm:text-[11px]">${rInfo.label}</span> • `
         : '';
 
@@ -1533,6 +1614,8 @@
         renderRecommendationsView();
       } else if (currentMainView === 'pack') {
         renderPackView();
+      } else if (currentMainView === 'otd') {
+        renderOtdView();
       } else {
         renderPortfolioView();
       }
@@ -1678,33 +1761,10 @@
       document.getElementById('playerDetailContent').classList.add('hidden');
       if (chartInstance) chartInstance.destroy();
     }
-    // Calculates optimal daily claims: max 2 per sport + 1 best wildcard from any sport
-    function getOptimalClaimsForDate(dateKey, cards = getPortfolio()) {
-      const targetMonthDay = dateKey.slice(5); // Extracts "MM-DD"
-      const candidates = [];
-      
-      cards.forEach(c => {
-        const mult = c.multiplier || 1;
-        if (!c.logs || !Array.isArray(c.logs)) return;
-        c.logs.forEach(l => {
-          // Matches any game on the same calendar day regardless of season year
-          if (l.date && l.date.slice(5) === targetMonthDay) {
-            candidates.push({
-              cardKey: c.cardKey,
-              playerId: c.id,
-              playerName: c.name,
-              sport: c.sport || 'OTHER',
-              year: c.year,
-              multiplier: mult,
-              baseEarnings: l.earnings,
-              rax: Math.round(l.earnings * mult),
-              originalDate: l.date
-            });
-          }
-        });
-      });
 
-      if (candidates.length === 0) return { totalRax: 0, claims: [] };
+    // Calculates optimal daily claims: max 2 per sport + 1 best wildcard from any sport
+    function evaluateDailyClaims(candidates) {
+      if (!candidates || candidates.length === 0) return { totalRax: 0, claims: [] };
 
       const bySport = {};
       candidates.forEach(cand => {
@@ -1749,6 +1809,33 @@
       return { totalRax, claims: selectedClaims };
     }
 
+    function getOptimalClaimsForDate(dateKey, cards = (currentMainView === 'otd' ? optimalOtdRoster : getPortfolio())) {
+      const targetMonthDay = dateKey.slice(5); // Extracts "MM-DD"
+      const candidates = [];
+      
+      cards.forEach(c => {
+        const mult = c.multiplier || 1;
+        if (!c.logs || !Array.isArray(c.logs)) return;
+        c.logs.forEach(l => {
+          if (l.date && l.date.slice(5) === targetMonthDay) {
+            candidates.push({
+              cardKey: c.cardKey,
+              playerId: c.id,
+              playerName: c.name,
+              sport: c.sport || 'OTHER',
+              year: c.year,
+              multiplier: mult,
+              baseEarnings: l.earnings,
+              rax: Math.round(l.earnings * mult),
+              originalDate: l.date
+            });
+          }
+        });
+      });
+
+      return evaluateDailyClaims(candidates);
+    }
+
     function switchPortfolioSubView(subView) {
       portfolioSubView = subView;
       const cardsBtn = document.getElementById('portSubCardsBtn');
@@ -1785,6 +1872,42 @@
       }
     }
 
+    function switchOtdSubView(subView) {
+      otdSubView = subView;
+      const rosterBtn = document.getElementById('otdSubRosterBtn');
+      const calBtn = document.getElementById('otdSubCalBtn');
+      const tableWrapper = document.getElementById('leaderboardTableWrapper');
+      const calContainer = document.getElementById('portfolioCalendarContainer');
+      const singleDetail = document.getElementById('playerDetailContent');
+      const dayDetail = document.getElementById('portfolioDayDetailContent');
+      const noSelect = document.getElementById('noSelectionNotice');
+
+      if (subView === 'roster') {
+        if (rosterBtn) rosterBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
+        if (calBtn) calBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+        if (tableWrapper) tableWrapper.classList.remove('hidden');
+        if (calContainer) { calContainer.classList.add('hidden'); calContainer.classList.remove('flex'); }
+        if (dayDetail) { dayDetail.classList.add('hidden'); dayDetail.classList.remove('flex'); }
+
+        if (activePlayer) {
+          singleDetail?.classList.remove('hidden');
+          noSelect?.classList.add('hidden');
+        } else {
+          noSelect?.classList.remove('hidden');
+        }
+      } else {
+        if (calBtn) calBtn.className = "px-2.5 py-1 rounded-md font-medium bg-emerald-500/20 text-emerald-400";
+        if (rosterBtn) rosterBtn.className = "px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-slate-200";
+        if (tableWrapper) tableWrapper.classList.add('hidden');
+        if (calContainer) { calContainer.classList.remove('hidden'); calContainer.classList.add('flex'); }
+        if (singleDetail) singleDetail.classList.add('hidden');
+        if (noSelect) noSelect.classList.add('hidden');
+        if (dayDetail) { dayDetail.classList.remove('hidden'); dayDetail.classList.add('flex'); }
+
+        renderPortfolioCalendar();
+      }
+    }
+
     function changePortCalMonth(delta) {
       portCalDate.setMonth(portCalDate.getMonth() + delta);
       renderPortfolioCalendar();
@@ -1794,7 +1917,7 @@
       const year = portCalDate.getFullYear();
       const month = portCalDate.getMonth();
       const monthStr = String(month + 1).padStart(2, '0');
-      const cards = getPortfolio();
+      const activeCards = (currentMainView === 'otd') ? optimalOtdRoster : getPortfolio();
 
       const monthLabel = document.getElementById('portCalMonthLabel');
       if (monthLabel) {
@@ -1818,7 +1941,7 @@
       for (let day = 1; day <= totalDays; day++) {
         const dayStr = String(day).padStart(2, '0');
         const dateKey = `${year}-${monthStr}-${dayStr}`;
-        const opt = getOptimalClaimsForDate(dateKey, cards);
+        const opt = getOptimalClaimsForDate(dateKey, activeCards);
 
         if (opt.claims.length > 0) {
           monthOptimizedRax += opt.totalRax;
@@ -1884,7 +2007,8 @@
       const dateObj = new Date(y, m - 1, d);
       const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
-      const opt = getOptimalClaimsForDate(dateKey);
+      const activeCards = (currentMainView === 'otd') ? optimalOtdRoster : getPortfolio();
+      const opt = getOptimalClaimsForDate(dateKey, activeCards);
       document.getElementById('portDayDetailDate').textContent = formattedDate;
       document.getElementById('portDayDetailMeta').innerHTML = `
         <span class="text-emerald-400 font-bold inline-flex items-center gap-1 font-mono text-sm">
@@ -1924,32 +2048,384 @@
         </div>
       `).join('');
     }
+
+    // OTD Cross-Sport Solver
+    async function loadAllDatasets(onProgress = () => {}) {
+      const tasks = [];
+      for (const [sport, seasons] of Object.entries(availableDatasets)) {
+        for (const [year, path] of Object.entries(seasons)) {
+          tasks.push({ sport, year, path });
+        }
+      }
+
+      let count = 0;
+      for (const t of tasks) {
+        const key = `${t.sport}_${t.year}`;
+        if (!datasetJsonCache[key]) {
+          try {
+            const res = await fetch(t.path);
+            if (res.ok) {
+              datasetJsonCache[key] = await res.json();
+            }
+          } catch (e) {
+            console.warn("Could not load", t.path);
+          }
+        }
+        count++;
+        onProgress(count, tasks.length, `Loading ${t.sport} ${t.year} (${count}/${tasks.length})...`);
+      }
+    }
+
+    async function generateOptimalOtdSetup() {
+      const targetSize = parseInt(document.getElementById('otdTargetSizeSelect').value, 10) || 50;
+      const minBaseRax = parseInt(document.getElementById('otdMinRaxInput').value, 10) || 150;
+
+      const runBtn = document.getElementById('otdRunBtn');
+      const runBtnText = document.getElementById('otdRunBtnText');
+      const progressWrapper = document.getElementById('otdProgressWrapper');
+      const statusText = document.getElementById('otdStatusText');
+      const progressText = document.getElementById('otdProgressText');
+      const progressBar = document.getElementById('otdProgressBar');
+
+      runBtn.disabled = true;
+      runBtnText.textContent = "Solving...";
+      progressWrapper.classList.remove('hidden');
+
+      try {
+        await loadAllDatasets((curr, total, msg) => {
+          const pct = Math.round((curr / total) * 70);
+          statusText.textContent = msg;
+          progressText.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+        });
+
+        statusText.textContent = "Indexing historical games and dates...";
+        progressText.textContent = "75%";
+        progressBar.style.width = "75%";
+        await new Promise(r => setTimeout(r, 50));
+
+        // Index candidate cards across all sports & seasons
+        const candidateMap = new Map();
+
+        for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
+          const [sport, year] = cacheKey.split('_');
+          const config = dataset.player_config || {};
+          const earnings = dataset.player_earnings || {};
+
+          for (const [pid, pInfo] of Object.entries(config)) {
+            const pEarnings = earnings[pid];
+            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings < minBaseRax) continue;
+
+            const cardKey = makeCardKey(pid, sport, year);
+            const logs = Object.keys(pEarnings)
+              .filter(k => k !== 'total_earnings' && typeof pEarnings[k] === 'object')
+              .map(k => pEarnings[k]);
+
+            if (logs.length === 0) continue;
+
+            // Pre-index by MM-DD
+            const dayMap = {};
+            logs.forEach(l => {
+              if (!l.date || !l.earnings) return;
+              const mmdd = l.date.slice(5);
+              if (!dayMap[mmdd] || l.earnings > dayMap[mmdd].earnings) {
+                dayMap[mmdd] = {
+                  sport: sport,
+                  rax: l.earnings,
+                  baseEarnings: l.earnings,
+                  cardKey: cardKey,
+                  playerName: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+                  year: year,
+                  originalDate: l.date
+                };
+              }
+            });
+
+            candidateMap.set(cardKey, {
+              cardKey: cardKey,
+              id: pid,
+              name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+              sport: sport,
+              year: year,
+              multiplier: 1,
+              total_earnings: pEarnings.total_earnings,
+              games_played: logs.length,
+              avg_per_game: Number((pEarnings.total_earnings / logs.length).toFixed(2)),
+              logs: logs,
+              dayMap: dayMap
+            });
+          }
+        }
+
+        statusText.textContent = "Executing greedy submodular marginal optimizer...";
+        progressText.textContent = "85%";
+        progressBar.style.width = "85%";
+        await new Promise(r => setTimeout(r, 50));
+
+        // Solver: Select cards one-by-one by maximum marginal contribution to daily lineups
+        const allCandidates = Array.from(candidateMap.values());
+        const chosenRoster = [];
+        const chosenKeys = new Set();
+        const activeDailyLineup = {}; // mmdd -> array of candidates
+
+        function evaluateDayRax(mmdd, extraCandidate = null) {
+          const baseList = activeDailyLineup[mmdd] || [];
+          const testList = extraCandidate ? baseList.concat(extraCandidate) : baseList;
+          return evaluateDailyClaims(testList).totalRax;
+        }
+
+        for (let round = 0; round < targetSize; round++) {
+          let bestCard = null;
+          let maxMarginalGain = 0;
+
+          for (const card of allCandidates) {
+            if (chosenKeys.has(card.cardKey)) continue;
+
+            let marginalGain = 0;
+            const dates = Object.keys(card.dayMap);
+            for (let d = 0; d < dates.length; d++) {
+              const mmdd = dates[d];
+              const curRax = evaluateDayRax(mmdd);
+              const newRax = evaluateDayRax(mmdd, card.dayMap[mmdd]);
+              if (newRax > curRax) {
+                marginalGain += (newRax - curRax);
+              }
+            }
+
+            if (marginalGain > maxMarginalGain) {
+              maxMarginalGain = marginalGain;
+              bestCard = card;
+            }
+          }
+
+          if (!bestCard || maxMarginalGain <= 0) break;
+
+          chosenKeys.add(bestCard.cardKey);
+          bestCard.marginal_otd_rax = maxMarginalGain;
+          bestCard.overlap_pct = Math.max(0, Math.round((1 - (maxMarginalGain / bestCard.total_earnings)) * 100));
+
+          // Lock in claims
+          for (const [mmdd, item] of Object.entries(bestCard.dayMap)) {
+            if (!activeDailyLineup[mmdd]) activeDailyLineup[mmdd] = [];
+            activeDailyLineup[mmdd].push(item);
+          }
+
+          chosenRoster.push(bestCard);
+        }
+
+        optimalOtdRoster = chosenRoster;
+        optimalOtdDailyMap = activeDailyLineup;
+
+        // Calculate total 365-day annual OTD RAX
+        let annualSum = 0;
+        for (let m = 1; m <= 12; m++) {
+          const totalDays = new Date(2024, m, 0).getDate(); // Leap year template covers all 366 potential days
+          const mStr = String(m).padStart(2, '0');
+          for (let d = 1; d <= totalDays; d++) {
+            const dStr = String(d).padStart(2, '0');
+            const mmdd = `${mStr}-${dStr}`;
+            annualSum += evaluateDailyClaims(activeDailyLineup[mmdd] || []).totalRax;
+          }
+        }
+        otdAnnualProjectedRax = annualSum;
+
+        progressBar.style.width = "100%";
+        progressText.textContent = "100%";
+        statusText.textContent = `Optimized! Generated ${chosenRoster.length} cards with minimal overlap.`;
+
+        document.getElementById('otdSaveAllBtn').classList.remove('hidden');
+        renderOtdView();
+      } catch (err) {
+        statusText.textContent = `Optimization error: ${err.message}`;
+      } finally {
+        runBtn.disabled = false;
+        runBtnText.textContent = "Re-Run Optimizer";
+      }
+    }
+
+    function saveAllOtdToPortfolio() {
+      if (optimalOtdRoster.length === 0) return;
+      const current = getPortfolio();
+      let added = 0;
+
+      optimalOtdRoster.forEach(card => {
+        if (!current.some(c => c.cardKey === card.cardKey)) {
+          current.push({
+            cardKey: card.cardKey,
+            id: card.id,
+            name: card.name,
+            sport: card.sport,
+            year: card.year,
+            multiplier: 1,
+            total_earnings: card.total_earnings,
+            games_played: card.games_played,
+            avg_per_game: card.avg_per_game,
+            logs: card.logs
+          });
+          added++;
+        }
+      });
+
+      savePortfolio(current);
+      alert(`Added ${added} optimal cards directly to your portfolio!`);
+      renderOtdView();
+    }
+
+    function renderOtdView() {
+      const tbody = document.getElementById('leaderboardBody');
+      const query = document.getElementById('searchInput').value.toLowerCase();
+
+      if (optimalOtdRoster.length === 0) {
+        document.getElementById('statTotalPool').textContent = '—';
+        document.getElementById('statTopEarner').textContent = '—';
+        document.getElementById('statAvgPlayer').textContent = '—';
+        document.getElementById('statTotalEvents').textContent = '0';
+
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 sm:p-10 text-center text-slate-400 text-xs sm:text-sm space-y-2">
+              <div class="text-emerald-400 font-semibold text-sm sm:text-base">No OTD Setup Generated Yet</div>
+              <p class="text-slate-400 max-w-md mx-auto text-[11px] sm:text-xs">
+                Click <strong class="text-emerald-400 font-medium">"Run Optimizer"</strong> above to analyze all sports and historical seasons simultaneously, selecting the highest-earning cards while eliminating bench overlap.
+              </p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const avgDailyRax = (otdAnnualProjectedRax / 365).toFixed(1);
+      const topPillar = [...optimalOtdRoster].sort((a, b) => (b.marginal_otd_rax || b.total_earnings) - (a.marginal_otd_rax || a.total_earnings))[0];
+
+      document.getElementById('statTotalPool').innerHTML = `
+        ${raxIcon('w-4 h-4 sm:w-6 sm:h-6 text-emerald-400')}
+        <span>${otdAnnualProjectedRax.toLocaleString()}</span>
+      `;
+      document.getElementById('statTopEarner').innerHTML = topPillar ? `
+        <span class="text-slate-100">${topPillar.name}</span>
+        <span class="text-[11px] sm:text-xs font-semibold text-emerald-400 ml-1 inline-flex items-center gap-1">
+          (+${(topPillar.marginal_otd_rax || topPillar.total_earnings).toLocaleString()} Net RAX)
+        </span>
+      ` : '—';
+      document.getElementById('statAvgPlayer').innerHTML = `
+        ${raxIcon('w-4 h-4 sm:w-5 sm:h-5 text-emerald-400')}
+        <span>${avgDailyRax} / Day</span>
+      `;
+      document.getElementById('statTotalEvents').textContent = optimalOtdRoster.length;
+
+      const filtered = optimalOtdRoster.filter(p => p.name.toLowerCase().includes(query));
+      filtered.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+        if (sortColumn === 'total_earnings') {
+          valA = a.marginal_otd_rax || a.total_earnings;
+          valB = b.marginal_otd_rax || b.total_earnings;
+        }
+        return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+
+      tbody.innerHTML = filtered.map((p, idx) => {
+        const isSelected = activePlayer && activePlayer.cardKey === p.cardKey;
+        const inPortfolio = isCardSaved(p.id, p.sport, p.year);
+        const overlapColor = p.overlap_pct <= 10 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : (p.overlap_pct <= 35 ? 'text-amber-300 bg-amber-500/10 border-amber-500/30' : 'text-rose-400 bg-rose-500/10 border-rose-500/30');
+
+        return `
+          <tr 
+            onclick="selectPortfolioCard('${p.cardKey}')" 
+            class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-emerald-500' : ''}"
+          >
+            <td class="p-2.5 sm:p-3 whitespace-nowrap">
+              <div class="font-medium text-slate-100 flex items-center gap-1.5">
+                <span class="text-[10px] font-mono text-slate-400">#${idx + 1}</span>
+                <span>${p.name}</span>
+              </div>
+              <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${p.sport}</span>
+                <span>${p.year} Season</span>
+                <span>•</span>
+                <span>${p.games_played} Games</span>
+              </div>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono font-bold text-emerald-400 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 justify-end">
+                ${raxIcon('w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400')}
+                <span>+${(p.marginal_otd_rax || p.total_earnings).toLocaleString()}</span>
+              </span>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right font-mono text-slate-400 whitespace-nowrap">
+              ${p.total_earnings.toLocaleString()}
+            </td>
+            <td class="p-2.5 sm:p-3 text-center whitespace-nowrap">
+              <span class="px-2 py-0.5 rounded border text-[10px] font-mono font-bold ${overlapColor}">
+                ${p.overlap_pct}% Overlap
+              </span>
+            </td>
+            <td class="p-2.5 sm:p-3 text-right text-slate-300 font-mono whitespace-nowrap">
+              ${p.avg_per_game.toFixed(2)}
+            </td>
+            <td class="p-2.5 sm:p-3 text-center" onclick="event.stopPropagation()">
+              <button 
+                onclick="toggleCardFromExplore('${p.id}')" 
+                class="p-1 sm:p-1.5 rounded-lg border transition ${inPortfolio 
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30' 
+                  : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
+                title="${inPortfolio ? 'Remove from portfolio' : 'Save to portfolio'}"
+              >
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current">
+                  ${inPortfolio 
+                    ? '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' 
+                    : '<path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>'}
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (!activePlayer || !filtered.some(x => x.cardKey === activePlayer.cardKey)) {
+        if (filtered[0]) selectPlayer(filtered[0]);
+      }
+    }
+
     function switchMainView(view) {
       currentMainView = view;
       const navExploreBtn = document.getElementById('navExploreBtn');
       const navPortfolioBtn = document.getElementById('navPortfolioBtn');
       const navRecsBtn = document.getElementById('navRecsBtn');
       const navPackBtn = document.getElementById('navPackBtn');
+      const navOtdBtn = document.getElementById('navOtdBtn');
+
       const datasetControls = document.getElementById('datasetControls');
       const portfolioRarityControls = document.getElementById('portfolioRarityControls');
       const portfolioSyncBanner = document.getElementById('portfolioSyncBanner');
       const recommendationsBanner = document.getElementById('recommendationsBanner');
+      const otdBanner = document.getElementById('otdBanner');
       const searchInput = document.getElementById('searchInput');
       searchInput.value = '';
 
-      navExploreBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition text-center";
-      navPortfolioBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
-      navRecsBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1";
-      if (navPackBtn) navPackBtn.className = "px-2 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1";
+      navExploreBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition text-center truncate";
+      navPortfolioBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate";
+      navRecsBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate";
+      if (navPackBtn) navPackBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate";
+      if (navOtdBtn) navOtdBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1 truncate";
 
       const portSubNav = document.getElementById('portfolioSubNav');
+      const otdSubNav = document.getElementById('otdSubNav');
       if (portSubNav) portSubNav.classList.add('hidden');
+      if (otdSubNav) otdSubNav.classList.add('hidden');
+
       portfolioRarityControls.classList.add('hidden');
       portfolioSyncBanner.classList.add('hidden');
       recommendationsBanner.classList.add('hidden');
+      otdBanner.classList.add('hidden');
+
+      // Reset calendar subviews back to tables
+      document.getElementById('leaderboardTableWrapper').classList.remove('hidden');
+      document.getElementById('portfolioCalendarContainer').classList.add('hidden');
+      document.getElementById('portfolioDayDetailContent').classList.add('hidden');
 
       if (view === 'explore') {
-        navExploreBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center";
+        navExploreBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition text-center truncate";
         datasetControls.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Leaderboard';
         document.getElementById('tableHeaderRow').innerHTML = `
@@ -1966,7 +2442,7 @@
         
         triggerDatasetLoad();
       } else if (view === 'portfolio') {
-        navPortfolioBtn.className = "px-2.5 sm:px-4 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center justify-center gap-1.5";
+        navPortfolioBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center justify-center gap-1 truncate";
         datasetControls.classList.add('hidden');
         portfolioRarityControls.classList.remove('hidden');
         portfolioSyncBanner.classList.remove('hidden');
@@ -1991,7 +2467,7 @@
         if (portSubNav) portSubNav.classList.remove('hidden');
         switchPortfolioSubView(portfolioSubView);
       } else if (view === 'recs') {
-        navRecsBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center justify-center gap-1";
+        navRecsBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center justify-center gap-1 truncate";
         datasetControls.classList.remove('hidden');
         recommendationsBanner.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Recommended Buy Targets';
@@ -2014,7 +2490,7 @@
           renderRecommendationsView();
         }
       } else if (view === 'pack') {
-        if (navPackBtn) navPackBtn.className = "px-2 sm:px-4 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 transition flex items-center justify-center gap-1";
+        if (navPackBtn) navPackBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 transition flex items-center justify-center gap-1 truncate";
         datasetControls.classList.remove('hidden');
         document.getElementById('viewHeading').textContent = 'Profitable Pack to Iconic Targets';
         document.getElementById('tableHeaderRow').innerHTML = `
@@ -2035,15 +2511,37 @@
         } else {
           renderPackView();
         }
+      } else if (view === 'otd') {
+        if (navOtdBtn) navOtdBtn.className = "px-1.5 sm:px-3.5 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition flex items-center justify-center gap-1 truncate";
+        datasetControls.classList.add('hidden');
+        otdBanner.classList.remove('hidden');
+        document.getElementById('viewHeading').textContent = 'Optimal OTD Setup (All Sports & Seasons)';
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th class="p-2.5 sm:p-3">Player Card</th>
+          <th class="p-2.5 sm:p-3 text-right cursor-pointer whitespace-nowrap" onclick="sortTable('total_earnings')">Marginal RAX ▾</th>
+          <th class="p-2.5 sm:p-3 text-right whitespace-nowrap">Season RAX</th>
+          <th class="p-2.5 sm:p-3 text-center whitespace-nowrap">Overlap Penalty</th>
+          <th class="p-2.5 sm:p-3 text-right whitespace-nowrap">Avg / Game</th>
+          <th class="p-2.5 sm:p-3 text-center whitespace-nowrap">Portfolio</th>
+        `;
+        document.getElementById('metricPoolLabel').textContent = 'Annual OTD RAX';
+        document.getElementById('metricTopLabel').textContent = 'Top OTD Pillar';
+        document.getElementById('metricAvgLabel').textContent = 'Avg Daily RAX';
+        document.getElementById('metricCountLabel').textContent = 'Setup Cards';
+
+        const otdSubNav = document.getElementById('otdSubNav');
+        if (otdSubNav) otdSubNav.classList.remove('hidden');
+        switchOtdSubView(otdSubView);
+        renderOtdView();
       }
     }
+
     function renderPackView() {
       const tbody = document.getElementById('leaderboardBody');
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
       const query = document.getElementById('searchInput').value.toLowerCase();
 
-      // 3,380 rating / 10 min rating per pack = 338 packs * 200 RAX = 67,600 RAX cost
       const PACK_COST = 67600;
       const ICONIC_MULT = 150;
 
@@ -2199,7 +2697,7 @@
     }
 
     async function triggerDatasetLoad() {
-      if (currentMainView === 'portfolio') return;
+      if (currentMainView === 'portfolio' || currentMainView === 'otd') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
       const filePath = availableDatasets[sport]?.[year];
@@ -2214,6 +2712,8 @@
           renderRecommendationsView();
         } else if (currentMainView === 'pack') {
           renderPackView();
+        } else if (currentMainView === 'otd') {
+          renderOtdView();
         } else {
           renderMetrics();
           renderLeaderboard();
@@ -2235,6 +2735,8 @@
           renderRecommendationsView();
         } else if (currentMainView === 'pack') {
           renderPackView();
+        } else if (currentMainView === 'otd') {
+          renderOtdView();
         } else {
           renderLeaderboard();
         }
@@ -2273,6 +2775,8 @@
         renderRecommendationsView();
       } else if (currentMainView === 'pack') {
         renderPackView();
+      } else if (currentMainView === 'otd') {
+        renderOtdView();
       } else {
         renderMetrics();
         renderLeaderboard();
@@ -2295,6 +2799,8 @@
           renderRecommendationsView();
         } else if (currentMainView === 'pack') {
           renderPackView();
+        } else if (currentMainView === 'otd') {
+          renderOtdView();
         } else {
           renderPortfolioView();
         }
