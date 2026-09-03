@@ -104,42 +104,26 @@
             <span>All-Sport Cross-Season OTD Optimizer</span>
           </div>
           <p class="text-xs text-slate-400">
-            Greedy marginal-gain solver across all seasons. Eliminates bench redundancy, enforces the <span class="text-slate-200 font-semibold">2/Sport + 1 Wildcard</span> cap, and maximizes 365-day annual RAX.
+            Automatically evaluates every sport and season to extract the theoretical maximum annual RAX under the <span class="text-slate-200 font-semibold">2/Sport + 1 Wildcard</span> rule with zero bench overlap.
           </p>
         </div>
 
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
-          <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
-            <label class="text-xs text-slate-400 whitespace-nowrap">Roster Size:</label>
-            <select id="otdTargetSizeSelect" class="w-full sm:w-28 bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500">
-              <option value="25">25 Cards</option>
-              <option value="50" selected>50 Cards</option>
-              <option value="75">75 Cards</option>
-              <option value="100">100 Cards</option>
-              <option value="150">150 Cards</option>
-            </select>
-          </div>
-          <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
-            <label class="text-xs text-slate-400 whitespace-nowrap">Min Base RAX:</label>
-            <input type="number" id="otdMinRaxInput" value="150" class="w-full sm:w-20 bg-black border border-zinc-700 text-slate-100 rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500">
-          </div>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              id="otdRunBtn"
-              onclick="generateOptimalOtdSetup()"
-              class="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 shrink-0"
-            >
-              <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
-              <span id="otdRunBtnText">Run Optimizer</span>
-            </button>
-            <button
-              id="otdSaveAllBtn"
-              onclick="saveAllOtdToPortfolio()"
-              class="hidden px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 text-xs font-medium transition whitespace-nowrap"
-            >
-              Add All to Portfolio
-            </button>
-          </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            id="otdRunBtn"
+            onclick="generateOptimalOtdSetup()"
+            class="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-semibold transition flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+            <span id="otdRunBtnText">Run Optimizer</span>
+          </button>
+          <button
+            id="otdSaveAllBtn"
+            onclick="saveAllOtdToPortfolio()"
+            class="hidden px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 text-xs font-medium transition whitespace-nowrap"
+          >
+            Add All to Portfolio
+          </button>
         </div>
       </div>
 
@@ -2532,9 +2516,14 @@
         const otdSubNav = document.getElementById('otdSubNav');
         if (otdSubNav) otdSubNav.classList.remove('hidden');
         switchOtdSubView(otdSubView);
-        renderOtdView();
+
+        // Automatically runs optimizer on first click
+        if (optimalOtdRoster.length === 0) {
+          generateOptimalOtdSetup();
+        } else {
+          renderOtdView();
+        }
       }
-    }
 
     function renderPackView() {
       const tbody = document.getElementById('leaderboardBody');
