@@ -2061,9 +2061,6 @@
     }
 
     async function generateOptimalOtdSetup() {
-      const targetSize = parseInt(document.getElementById('otdTargetSizeSelect').value, 10) || 50;
-      const minBaseRax = parseInt(document.getElementById('otdMinRaxInput').value, 10) || 150;
-
       const runBtn = document.getElementById('otdRunBtn');
       const runBtnText = document.getElementById('otdRunBtnText');
       const progressWrapper = document.getElementById('otdProgressWrapper');
@@ -2071,24 +2068,25 @@
       const progressText = document.getElementById('otdProgressText');
       const progressBar = document.getElementById('otdProgressBar');
 
-      runBtn.disabled = true;
-      runBtnText.textContent = "Solving...";
-      progressWrapper.classList.remove('hidden');
+      if (runBtn) {
+        runBtn.disabled = true;
+        if (runBtnText) runBtnText.textContent = "Solving...";
+      }
+      if (progressWrapper) progressWrapper.classList.remove('hidden');
 
       try {
         await loadAllDatasets((curr, total, msg) => {
-          const pct = Math.round((curr / total) * 70);
-          statusText.textContent = msg;
-          progressText.textContent = `${pct}%`;
-          progressBar.style.width = `${pct}%`;
+          const pct = Math.round((curr / total) * 60);
+          if (statusText) statusText.textContent = msg;
+          if (progressText) progressText.textContent = `${pct}%`;
+          if (progressBar) progressBar.style.width = `${pct}%`;
         });
 
-        statusText.textContent = "Indexing historical games and dates...";
-        progressText.textContent = "75%";
-        progressBar.style.width = "75%";
-        await new Promise(r => setTimeout(r, 50));
+        if (statusText) statusText.textContent = "Indexing all historical seasons and game logs...";
+        if (progressText) progressText.textContent = "65%";
+        if (progressBar) progressBar.style.width = "65%";
+        await new Promise(r => setTimeout(r, 40));
 
-        // Index candidate cards across all sports & seasons
         const candidateMap = new Map();
 
         for (const [cacheKey, dataset] of Object.entries(datasetJsonCache)) {
@@ -2098,7 +2096,7 @@
 
           for (const [pid, pInfo] of Object.entries(config)) {
             const pEarnings = earnings[pid];
-            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings < minBaseRax) continue;
+            if (!pEarnings || !pEarnings.total_earnings || pEarnings.total_earnings <= 0) continue;
 
             const cardKey = makeCardKey(pid, sport, year);
             const logs = Object.keys(pEarnings)
@@ -2107,10 +2105,9 @@
 
             if (logs.length === 0) continue;
 
-            // Pre-index by MM-DD
             const dayMap = {};
             logs.forEach(l => {
-              if (!l.date || !l.earnings) return;
+              if (!l.date || !l.earnings || l.earnings <= 0) return;
               const mmdd = l.date.slice(5);
               if (!dayMap[mmdd] || l.earnings > dayMap[mmdd].earnings) {
                 dayMap[mmdd] = {
@@ -2141,16 +2138,15 @@
           }
         }
 
-        statusText.textContent = "Executing greedy submodular marginal optimizer...";
-        progressText.textContent = "85%";
-        progressBar.style.width = "85%";
-        await new Promise(r => setTimeout(r, 50));
+        if (statusText) statusText.textContent = "Running unconstrained marginal solver to maximize annual RAX...";
+        if (progressText) progressText.textContent = "75%";
+        if (progressBar) progressBar.style.width = "75%";
+        await new Promise(r => setTimeout(r, 40));
 
-        // Solver: Select cards one-by-one by maximum marginal contribution to daily lineups
-        const allCandidates = Array.from(candidateMap.values());
+        let availableCandidates = Array.from(candidateMap.values());
         const chosenRoster = [];
         const chosenKeys = new Set();
-        const activeDailyLineup = {}; // mmdd -> array of candidates
+        const activeDailyLineup = {};
 
         function evaluateDayRax(mmdd, extraCandidate = null) {
           const baseList = activeDailyLineup[mmdd] || [];
@@ -2158,11 +2154,12 @@
           return evaluateDailyClaims(testList).totalRax;
         }
 
-        for (let round = 0; round < targetSize; round++) {
+        while (availableCandidates.length > 0) {
           let bestCard = null;
           let maxMarginalGain = 0;
+          const nextCandidates = [];
 
-          for (const card of allCandidates) {
+          for (const card of availableCandidates) {
             if (chosenKeys.has(card.cardKey)) continue;
 
             let marginalGain = 0;
@@ -2176,9 +2173,12 @@
               }
             }
 
-            if (marginalGain > maxMarginalGain) {
-              maxMarginalGain = marginalGain;
-              bestCard = card;
+            if (marginalGain > 0) {
+              nextCandidates.push(card);
+              if (marginalGain > maxMarginalGain) {
+                maxMarginalGain = marginalGain;
+                bestCard = card;
+              }
             }
           }
 
@@ -2188,22 +2188,21 @@
           bestCard.marginal_otd_rax = maxMarginalGain;
           bestCard.overlap_pct = Math.max(0, Math.round((1 - (maxMarginalGain / bestCard.total_earnings)) * 100));
 
-          // Lock in claims
           for (const [mmdd, item] of Object.entries(bestCard.dayMap)) {
             if (!activeDailyLineup[mmdd]) activeDailyLineup[mmdd] = [];
             activeDailyLineup[mmdd].push(item);
           }
 
           chosenRoster.push(bestCard);
+          availableCandidates = nextCandidates;
         }
 
         optimalOtdRoster = chosenRoster;
         optimalOtdDailyMap = activeDailyLineup;
 
-        // Calculate total 365-day annual OTD RAX
         let annualSum = 0;
         for (let m = 1; m <= 12; m++) {
-          const totalDays = new Date(2024, m, 0).getDate(); // Leap year template covers all 366 potential days
+          const totalDays = new Date(2024, m, 0).getDate();
           const mStr = String(m).padStart(2, '0');
           for (let d = 1; d <= totalDays; d++) {
             const dStr = String(d).padStart(2, '0');
@@ -2213,17 +2212,20 @@
         }
         otdAnnualProjectedRax = annualSum;
 
-        progressBar.style.width = "100%";
-        progressText.textContent = "100%";
-        statusText.textContent = `Optimized! Generated ${chosenRoster.length} cards with minimal overlap.`;
+        if (progressBar) progressBar.style.width = "100%";
+        if (progressText) progressText.textContent = "100%";
+        if (statusText) statusText.textContent = `Optimized! Saturated 365-day schedule across ${chosenRoster.length} cards for maximum RAX.`;
 
-        document.getElementById('otdSaveAllBtn').classList.remove('hidden');
+        const saveBtn = document.getElementById('otdSaveAllBtn');
+        if (saveBtn) saveBtn.classList.remove('hidden');
         renderOtdView();
       } catch (err) {
-        statusText.textContent = `Optimization error: ${err.message}`;
+        if (statusText) statusText.textContent = `Optimization error: ${err.message}`;
       } finally {
-        runBtn.disabled = false;
-        runBtnText.textContent = "Re-Run Optimizer";
+        if (runBtn) {
+          runBtn.disabled = false;
+          if (runBtnText) runBtnText.textContent = "Re-Run Optimizer";
+        }
       }
     }
 
