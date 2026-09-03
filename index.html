@@ -641,8 +641,8 @@
     function generateRequestToken() {
       const timestampMs = Date.now();
       // @ts-ignore
-      const hasher = new Hashids("realwebapp", 16)[cite: 1];
-      return hasher.encode(timestampMs)[cite: 1];
+      const hasher = new Hashids("realwebapp", 16);
+      return hasher.encode(timestampMs);
     }
 
     async function fetchUserIdByUsername(username, retries = 0) {
@@ -650,7 +650,7 @@
       const deviceUuid = crypto.randomUUID();
       const cleanUsername = username.trim().toLowerCase();
       const targetUrl = `https://web.realapp.com/user/${encodeURIComponent(cleanUsername)}`;
-      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`[cite: 1];
+      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
 
       try {
         const res = await fetch(proxyUrl);
@@ -680,7 +680,7 @@
       const token = generateRequestToken();
       const deviceUuid = crypto.randomUUID();
       const targetUrl = `https://web.realapp.com/userpasses/${userId}/passes?entityType=player&season=${season}&sport=${sport}`;
-      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`[cite: 1];
+      const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
 
       try {
         const res = await fetch(proxyUrl);
@@ -873,7 +873,7 @@
             const token = generateRequestToken();
             const deviceUuid = crypto.randomUUID();
             const targetUrl = `https://web.realapp.com/userpassshop/${sport}/season/${season}/entity/player/section/hotseason?before=${before}`;
-            const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`[cite: 1];
+            const proxyUrl = `${WORKER_PROXY}?url=${encodeURIComponent(targetUrl)}&auth=${encodeURIComponent(REAL_AUTH_TOKEN)}&uuid=${deviceUuid}&token=${token}`;
 
             const res = await fetch(proxyUrl);
             if (res.status === 429 || res.status === 502) {
