@@ -1225,6 +1225,13 @@
                 <span>${p.avg_per_game.toFixed(2)}</span>
               </span>
             </td>
+            <td class="p-2.5 sm:p-3 font-medium text-slate-100 whitespace-nowrap">
+              <div>${p.name}</div>
+              <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${p.sport}</span>
+                <span>${p.year === 'ALL' ? 'All-Time' : p.year}</span>
+              </div>
+            </td>
             <td class="p-2.5 sm:p-3 text-center" onclick="event.stopPropagation()">
               <button 
                 onclick="toggleCardFromExplore('${p.id}')" 
@@ -3030,8 +3037,9 @@
       const sportSelect = document.getElementById('sportSelect');
       const sports = Object.keys(availableDatasets);
       
-      sportSelect.innerHTML = sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
-      updateYearDropdown(sports[0]);
+      // Adds "ALL" to allow all-sport queries
+      sportSelect.innerHTML = `<option value="ALL">ALL SPORTS</option>` + sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
+      updateYearDropdown('ALL');
 
       sportSelect.addEventListener('change', (e) => {
         updateYearDropdown(e.target.value);
@@ -3050,29 +3058,134 @@
 
     function updateYearDropdown(selectedSport) {
       const yearSelect = document.getElementById('yearSelect');
-      const years = Object.keys(availableDatasets[selectedSport] || {});
-      yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+      let years = [];
+
+      if (selectedSport === 'ALL') {
+        const allYearsSet = new Set();
+        Object.values(availableDatasets).forEach(sObj => {
+          Object.keys(sObj).forEach(y => allYearsSet.add(y));
+        });
+        years = Array.from(allYearsSet).sort((a, b) => Number(b) - Number(a));
+      } else {
+        years = Object.keys(availableDatasets[selectedSport] || {}).sort((a, b) => Number(b) - Number(a));
+      }
+
+      // Adds "ALL" for all-time aggregation
+      yearSelect.innerHTML = `<option value="ALL">All-Time</option>` + years.map(year => `<option value="${year}">${year}</option>`).join('');
     }
 
     async function triggerDatasetLoad() {
       if (currentMainView === 'portfolio' || currentMainView === 'otd') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
-      const filePath = availableDatasets[sport]?.[year];
-      if (filePath) {
-        await loadDataset(filePath);
+
+      // Update heading title dynamically
+      const heading = document.getElementById('viewHeading');
+      if (heading && currentMainView === 'explore') {
+        if (sport === 'ALL' && year === 'ALL') heading.textContent = 'All-Sport All-Time Leaderboard';
+        else if (sport === 'ALL') heading.textContent = `All-Sport ${year} Leaderboard`;
+        else if (year === 'ALL') heading.textContent = `${sport} All-Time Leaderboard`;
+        else heading.textContent = `${sport} ${year} Leaderboard`;
       }
+
+      const filesToLoad = [];
+      const sports = sport === 'ALL' ? Object.keys(availableDatasets) : [sport];
+
+      for (const sp of sports) {
+        const spYears = availableDatasets[sp] || {};
+        const targetYears = year === 'ALL' ? Object.keys(spYears) : (spYears[year] ? [year] : []);
+        for (const yr of targetYears) {
+          if (spYears[yr]) {
+            filesToLoad.push({ sport: sp, year: yr, path: spYears[yr] });
+          }
+        }
+      }
+
+      if (filesToLoad.length === 0) {
+        players = [];
+        renderMetrics();
+        renderLeaderboard();
+        resetDetailView();
+        return;
+      }
+
+      // Single file fast-path
+      if (filesToLoad.length === 1 && sport !== 'ALL' && year !== 'ALL') {
+        await loadDataset(filesToLoad[0].path, filesToLoad[0].sport, filesToLoad[0].year);
+        return;
+      }
+
+      // Multi-file aggregation (All-Time and/or All-Sports)
+      await loadAndAggregateDatasets(filesToLoad, sport, year);
     }
 
-    async function loadDataset(fileName) {
+    async function loadAndAggregateDatasets(filesToLoad, reqSport, reqYear) {
+      const aggregatedConfig = {};
+      const aggregatedEarnings = {};
+
+      for (const item of filesToLoad) {
+        const key = `${item.sport}_${item.year}`;
+        let data = datasetJsonCache[key];
+        if (!data) {
+          try {
+            const res = await fetch(item.path);
+            if (res.ok) {
+              data = await res.json();
+              datasetJsonCache[key] = data;
+            }
+          } catch (e) {
+            console.warn('Failed loading', item.path, e);
+          }
+        }
+
+        if (!data) continue;
+
+        const config = data.player_config || {};
+        const earnings = data.player_earnings || {};
+
+        for (const [pid, pInfo] of Object.entries(config)) {
+          // Namespace by sport to avoid player ID collisions across different leagues
+          const aggId = reqSport === 'ALL' ? `${item.sport}_${pid}` : pid;
+
+          if (!aggregatedConfig[aggId]) {
+            aggregatedConfig[aggId] = {
+              ...pInfo,
+              id: aggId,
+              rawId: pid,
+              sport: item.sport,
+              years: [item.year]
+            };
+            aggregatedEarnings[aggId] = { total_earnings: 0 };
+          } else {
+            if (!aggregatedConfig[aggId].years.includes(item.year)) {
+              aggregatedConfig[aggId].years.push(item.year);
+            }
+          }
+
+          const pEarnings = earnings[pid] || {};
+          aggregatedEarnings[aggId].total_earnings += (pEarnings.total_earnings || 0);
+
+          for (const [evtKey, evtVal] of Object.entries(pEarnings)) {
+            if (evtKey !== 'total_earnings' && typeof evtVal === 'object') {
+              aggregatedEarnings[aggId][`${item.year}_${evtKey}`] = evtVal;
+            }
+          }
+        }
+      }
+
+      currentLoadedFile = `AGG_${reqSport}_${reqYear}`;
+      parseData({
+        player_config: aggregatedConfig,
+        player_earnings: aggregatedEarnings
+      }, reqSport, reqYear);
+    }
+
+    async function loadDataset(fileName, sportOverride = null, yearOverride = null) {
       if (currentLoadedFile === fileName && players.length > 0) {
-        if (currentMainView === 'recs') {
-          renderRecommendationsView();
-        } else if (currentMainView === 'pack') {
-          renderPackView();
-        } else if (currentMainView === 'otd') {
-          renderOtdView();
-        } else {
+        if (currentMainView === 'recs') renderRecommendationsView();
+        else if (currentMainView === 'pack') renderPackView();
+        else if (currentMainView === 'otd') renderOtdView();
+        else {
           renderMetrics();
           renderLeaderboard();
         }
@@ -3084,26 +3197,23 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         currentLoadedFile = fileName;
-        parseData(data);
+        parseData(data, sportOverride, yearOverride);
       } catch (err) {
-        console.warn("Dataset load failed or missing file:", err);
+        console.warn("Dataset load failed:", err);
         currentLoadedFile = '';
         players = [];
-        if (currentMainView === 'recs') {
-          renderRecommendationsView();
-        } else if (currentMainView === 'pack') {
-          renderPackView();
-        } else if (currentMainView === 'otd') {
-          renderOtdView();
-        } else {
-          renderLeaderboard();
-        }
+        if (currentMainView === 'recs') renderRecommendationsView();
+        else if (currentMainView === 'pack') renderPackView();
+        else if (currentMainView === 'otd') renderOtdView();
+        else renderLeaderboard();
       }
     }
 
-    function parseData(json) {
+    function parseData(json, reqSport = null, reqYear = null) {
       const config = json.player_config || {};
       const earnings = json.player_earnings || {};
+      const currentSport = reqSport || document.getElementById('sportSelect').value;
+      const currentYear = reqYear || document.getElementById('yearSelect').value;
 
       players = Object.keys(config).map(id => {
         const pInfo = config[id];
@@ -3117,10 +3227,15 @@
 
         const games = logs.length;
         const avg = games > 0 ? Number((total / games).toFixed(2)) : 0;
+        const playerSport = pInfo.sport || currentSport;
+        const playerYear = pInfo.years ? (pInfo.years.length > 1 ? 'All-Time' : pInfo.years[0]) : currentYear;
 
         return {
-          id: id,
+          id: pInfo.rawId || id,
+          cardKey: makeCardKey(pInfo.rawId || id, playerSport, playerYear),
           name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
+          sport: playerSport,
+          year: playerYear,
           multiplier: 1,
           total_earnings: total,
           games_played: games,
