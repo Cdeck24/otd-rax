@@ -866,22 +866,84 @@
       }
     }
 
-    async function getDatasetJson(sportLabel, season) {
-      const key = `${sportLabel}_${season}`;
-      if (datasetJsonCache[key]) return datasetJsonCache[key];
+    // Persistent IndexedDB Cache for static season files
+    const IDB_CONFIG = { dbName: 'RaxStaticDataDB', storeName: 'datasets', version: 1 };
 
-      const filePath = availableDatasets[sportLabel]?.[String(season)];
-      if (!filePath) return null;
+    function getIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_CONFIG.dbName, IDB_CONFIG.version);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_CONFIG.storeName)) {
+            db.createObjectStore(IDB_CONFIG.storeName);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
 
+    async function idbGet(key) {
       try {
-        const res = await fetch(filePath);
-        if (!res.ok) return null;
-        const json = await res.json();
-        datasetJsonCache[key] = json;
-        return json;
+        const db = await getIDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(IDB_CONFIG.storeName, 'readonly');
+          const store = tx.objectStore(IDB_CONFIG.storeName);
+          const req = store.get(key);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
       } catch {
         return null;
       }
+    }
+
+    async function idbSet(key, value) {
+      try {
+        const db = await getIDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(IDB_CONFIG.storeName, 'readwrite');
+          const store = tx.objectStore(IDB_CONFIG.storeName);
+          store.put(value, key);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+      } catch {
+        return false;
+      }
+    }
+
+    async function fetchDatasetWithPersistentCache(cacheKey, filePath) {
+      if (datasetJsonCache[cacheKey]) {
+        return datasetJsonCache[cacheKey];
+      }
+
+      // Check persistent browser storage first
+      const cached = await idbGet(cacheKey);
+      if (cached) {
+        datasetJsonCache[cacheKey] = cached;
+        return cached;
+      }
+
+      // First-time load: fetch from disk and cache permanently
+      try {
+        const res = await fetch(filePath);
+        if (!res.ok) return null;
+        const data = await res.json();
+        datasetJsonCache[cacheKey] = data;
+        idbSet(cacheKey, data);
+        return data;
+      } catch (err) {
+        console.warn(`Could not load dataset for ${cacheKey}:`, err);
+        return null;
+      }
+    }
+
+    async function getDatasetJson(sportLabel, season) {
+      const key = `${sportLabel}_${season}`;
+      const filePath = availableDatasets[sportLabel]?.[String(season)];
+      if (!filePath) return null;
+      return await fetchDatasetWithPersistentCache(key, filePath);
     }
 
     async function startPortfolioSync() {
@@ -2101,16 +2163,7 @@
       let count = 0;
       for (const t of tasks) {
         const key = `${t.sport}_${t.year}`;
-        if (!datasetJsonCache[key]) {
-          try {
-            const res = await fetch(t.path);
-            if (res.ok) {
-              datasetJsonCache[key] = await res.json();
-            }
-          } catch (e) {
-            console.warn("Could not load", t.path);
-          }
-        }
+        await fetchDatasetWithPersistentCache(key, t.path);
         count++;
         onProgress(count, tasks.length, `Loading ${t.sport} ${t.year} (${count}/${tasks.length})...`);
       }
@@ -3119,32 +3172,49 @@
       await loadAndAggregateDatasets(filesToLoad, sport, year);
     }
 
+    async function loadDataset(fileName, sportOverride = null, yearOverride = null) {
+      const sport = sportOverride || document.getElementById('sportSelect').value;
+      const year = yearOverride || document.getElementById('yearSelect').value;
+      const key = `${sport}_${year}`;
+
+      if (currentLoadedFile === fileName && players.length > 0) {
+        if (currentMainView === 'recs') renderRecommendationsView();
+        else if (currentMainView === 'pack') renderPackView();
+        else if (currentMainView === 'otd') renderOtdView();
+        else {
+          renderMetrics();
+          renderLeaderboard();
+        }
+        return;
+      }
+
+      const data = await fetchDatasetWithPersistentCache(key, fileName);
+      if (data) {
+        currentLoadedFile = fileName;
+        parseData(data, sportOverride, yearOverride);
+      } else {
+        currentLoadedFile = '';
+        players = [];
+        if (currentMainView === 'recs') renderRecommendationsView();
+        else if (currentMainView === 'pack') renderPackView();
+        else if (currentMainView === 'otd') renderOtdView();
+        else renderLeaderboard();
+      }
+    }
+
     async function loadAndAggregateDatasets(filesToLoad, reqSport, reqYear) {
       const aggregatedConfig = {};
       const aggregatedEarnings = {};
 
       for (const item of filesToLoad) {
         const key = `${item.sport}_${item.year}`;
-        let data = datasetJsonCache[key];
-        if (!data) {
-          try {
-            const res = await fetch(item.path);
-            if (res.ok) {
-              data = await res.json();
-              datasetJsonCache[key] = data;
-            }
-          } catch (e) {
-            console.warn('Failed loading', item.path, e);
-          }
-        }
-
+        const data = await fetchDatasetWithPersistentCache(key, item.path);
         if (!data) continue;
 
         const config = data.player_config || {};
         const earnings = data.player_earnings || {};
 
         for (const [pid, pInfo] of Object.entries(config)) {
-          // Namespace by sport to avoid player ID collisions across different leagues
           const aggId = reqSport === 'ALL' ? `${item.sport}_${pid}` : pid;
 
           if (!aggregatedConfig[aggId]) {
@@ -3178,35 +3248,6 @@
         player_config: aggregatedConfig,
         player_earnings: aggregatedEarnings
       }, reqSport, reqYear);
-    }
-
-    async function loadDataset(fileName, sportOverride = null, yearOverride = null) {
-      if (currentLoadedFile === fileName && players.length > 0) {
-        if (currentMainView === 'recs') renderRecommendationsView();
-        else if (currentMainView === 'pack') renderPackView();
-        else if (currentMainView === 'otd') renderOtdView();
-        else {
-          renderMetrics();
-          renderLeaderboard();
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch(fileName);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        currentLoadedFile = fileName;
-        parseData(data, sportOverride, yearOverride);
-      } catch (err) {
-        console.warn("Dataset load failed:", err);
-        currentLoadedFile = '';
-        players = [];
-        if (currentMainView === 'recs') renderRecommendationsView();
-        else if (currentMainView === 'pack') renderPackView();
-        else if (currentMainView === 'otd') renderOtdView();
-        else renderLeaderboard();
-      }
     }
 
     function parseData(json, reqSport = null, reqYear = null) {
