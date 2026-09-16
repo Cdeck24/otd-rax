@@ -1263,8 +1263,6 @@
     function renderLeaderboard() {
       const tbody = document.getElementById('leaderboardBody');
       const query = document.getElementById('searchInput').value.toLowerCase();
-      const currentSport = document.getElementById('sportSelect').value;
-      const currentYear = document.getElementById('yearSelect').value;
 
       const filtered = players.filter(p => p.name.toLowerCase().includes(query));
 
@@ -1274,7 +1272,10 @@
         return sortAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
       });
 
-      const rowsHtml = filtered.map(p => {
+      // Renders the top 100 rows to keep DOM painting instantaneous
+      const displayList = filtered.slice(0, 100);
+
+      const rowsHtml = displayList.map(p => {
         const isSelected = activePlayer && activePlayer.cardKey === p.cardKey;
         const inPortfolio = isCardSaved(p.id, p.sport, p.year);
 
@@ -1664,10 +1665,6 @@
 
       renderCalendarView();
       renderChart(p.logs, mult);
-
-      if (currentMainView === 'explore') {
-        renderLeaderboard();
-      }
 
       // Smooth scroll to details when selected on mobile screens
       if (window.innerWidth < 1024) {
