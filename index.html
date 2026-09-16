@@ -609,6 +609,7 @@
 
     const datasetJsonCache = {};
     const ownershipCache = {};
+    const parsedPlayersCache = {}; // Caches fully processed player lists for instant tab switching
     let portfolioCache = null;
     let portfolioKeySet = new Set();
     let currentLoadedFile = '';
@@ -3154,6 +3155,7 @@
       if (currentMainView === 'portfolio' || currentMainView === 'otd') return;
       const sport = document.getElementById('sportSelect').value;
       const year = document.getElementById('yearSelect').value;
+      const viewKey = `${sport}_${year}`;
 
       // Update heading title dynamically
       const heading = document.getElementById('viewHeading');
@@ -3162,6 +3164,22 @@
         else if (sport === 'ALL') heading.textContent = `All-Sport ${year} Leaderboard`;
         else if (year === 'ALL') heading.textContent = `${sport} All-Time Leaderboard`;
         else heading.textContent = `${sport} ${year} Leaderboard`;
+      }
+
+      // Instant cache hit: skips all disk reads, data merging, and date-sorting
+      if (parsedPlayersCache[viewKey] && parsedPlayersCache[viewKey].length > 0) {
+        currentLoadedFile = viewKey;
+        players = parsedPlayersCache[viewKey];
+        if (currentMainView === 'recs') renderRecommendationsView();
+        else if (currentMainView === 'pack') renderPackView();
+        else if (currentMainView === 'otd') renderOtdView();
+        else {
+          renderMetrics();
+          renderLeaderboard();
+        }
+        if (players.length > 0) selectPlayer(players[0]);
+        else resetDetailView();
+        return;
       }
 
       const filesToLoad = [];
@@ -3301,6 +3319,10 @@
           logs: logs
         };
       });
+
+      // Save processed players list to memory cache
+      const viewKey = `${currentSport}_${currentYear}`;
+      parsedPlayersCache[viewKey] = players;
 
       if (currentMainView === 'recs') {
         renderRecommendationsView();
