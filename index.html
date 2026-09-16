@@ -683,8 +683,15 @@
       }
     }
 
-    function toggleCardFromExplore(pId) {
-      const p = (currentMainView === 'otd' ? optimalOtdRoster : players).find(x => String(x.id) === String(pId));
+    function selectPlayerByCardKey(cardKey) {
+      const p = players.find(x => x.cardKey === cardKey);
+      if (p) selectPlayer(p);
+    }
+
+    function toggleCardFromExplore(cardKeyOrId) {
+      const p = (currentMainView === 'otd' ? optimalOtdRoster : players).find(
+        x => x.cardKey === cardKeyOrId || String(x.id) === String(cardKeyOrId)
+      );
       if (!p) return;
       const sport = p.sport || document.getElementById('sportSelect').value;
       const year = p.year || document.getElementById('yearSelect').value;
@@ -1265,15 +1272,21 @@
       });
 
       const rowsHtml = filtered.map(p => {
-        const isSelected = activePlayer && String(activePlayer.id) === String(p.id);
-        const inPortfolio = isCardSaved(p.id, currentSport, currentYear);
+        const isSelected = activePlayer && activePlayer.cardKey === p.cardKey;
+        const inPortfolio = isCardSaved(p.id, p.sport, p.year);
 
         return `
           <tr 
-            onclick="selectPlayerById('${p.id}')" 
+            onclick="selectPlayerByCardKey('${p.cardKey}')" 
             class="cursor-pointer transition hover:bg-zinc-800/50 ${isSelected ? 'bg-zinc-800/80 border-l-4 border-sky-500' : ''}"
           >
-            <td class="p-2.5 sm:p-3 font-medium text-slate-100 whitespace-nowrap">${p.name}</td>
+            <td class="p-2.5 sm:p-3 font-medium text-slate-100 whitespace-nowrap">
+              <div>${p.name}</div>
+              <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${p.sport}</span>
+                <span>${p.year} Season</span>
+              </div>
+            </td>
             <td class="p-2.5 sm:p-3 text-right font-mono text-sky-400 font-semibold whitespace-nowrap">
               <span class="inline-flex items-center gap-1 justify-end">
                 ${raxIcon('w-3 h-3 sm:w-3.5 sm:h-3.5 text-sky-400')}
@@ -1287,16 +1300,9 @@
                 <span>${p.avg_per_game.toFixed(2)}</span>
               </span>
             </td>
-            <td class="p-2.5 sm:p-3 font-medium text-slate-100 whitespace-nowrap">
-              <div>${p.name}</div>
-              <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
-                <span class="px-1.5 py-0.2 rounded bg-zinc-800 text-sky-300 font-semibold">${p.sport}</span>
-                <span>${p.year === 'ALL' ? 'All-Time' : p.year}</span>
-              </div>
-            </td>
             <td class="p-2.5 sm:p-3 text-center" onclick="event.stopPropagation()">
               <button 
-                onclick="toggleCardFromExplore('${p.id}')" 
+                onclick="toggleCardFromExplore('${p.cardKey}')" 
                 class="p-1 sm:p-1.5 rounded-lg border transition ${inPortfolio 
                   ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 hover:bg-sky-500/30' 
                   : 'bg-zinc-800/60 text-slate-400 border-zinc-700 hover:text-slate-200 hover:bg-zinc-700'}"
@@ -3215,31 +3221,19 @@
         const earnings = data.player_earnings || {};
 
         for (const [pid, pInfo] of Object.entries(config)) {
-          const aggId = reqSport === 'ALL' ? `${item.sport}_${pid}` : pid;
+          // Each player-season pair is treated as its own independent card entry
+          const seasonKey = `${item.sport}_${item.year}_${pid}`;
+          const pEarnings = earnings[pid] || { total_earnings: 0 };
 
-          if (!aggregatedConfig[aggId]) {
-            aggregatedConfig[aggId] = {
-              ...pInfo,
-              id: aggId,
-              rawId: pid,
-              sport: item.sport,
-              years: [item.year]
-            };
-            aggregatedEarnings[aggId] = { total_earnings: 0 };
-          } else {
-            if (!aggregatedConfig[aggId].years.includes(item.year)) {
-              aggregatedConfig[aggId].years.push(item.year);
-            }
-          }
+          aggregatedConfig[seasonKey] = {
+            ...pInfo,
+            id: pid,
+            rawId: pid,
+            sport: item.sport,
+            year: item.year
+          };
 
-          const pEarnings = earnings[pid] || {};
-          aggregatedEarnings[aggId].total_earnings += (pEarnings.total_earnings || 0);
-
-          for (const [evtKey, evtVal] of Object.entries(pEarnings)) {
-            if (evtKey !== 'total_earnings' && typeof evtVal === 'object') {
-              aggregatedEarnings[aggId][`${item.year}_${evtKey}`] = evtVal;
-            }
-          }
+          aggregatedEarnings[seasonKey] = pEarnings;
         }
       }
 
@@ -3269,11 +3263,11 @@
         const games = logs.length;
         const avg = games > 0 ? Number((total / games).toFixed(2)) : 0;
         const playerSport = pInfo.sport || currentSport;
-        const playerYear = pInfo.years ? (pInfo.years.length > 1 ? 'All-Time' : pInfo.years[0]) : currentYear;
+        const playerYear = pInfo.year || currentYear;
 
         return {
-          id: pInfo.rawId || id,
-          cardKey: makeCardKey(pInfo.rawId || id, playerSport, playerYear),
+          id: pInfo.rawId || pInfo.id || id,
+          cardKey: makeCardKey(pInfo.rawId || pInfo.id || id, playerSport, playerYear),
           name: `${pInfo.first_name || ''} ${pInfo.last_name || ''}`.trim(),
           sport: playerSport,
           year: playerYear,
