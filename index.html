@@ -3106,9 +3106,16 @@
       const sportSelect = document.getElementById('sportSelect');
       const sports = Object.keys(availableDatasets);
       
-      // Adds "ALL" to allow all-sport queries
       sportSelect.innerHTML = `<option value="ALL">ALL SPORTS</option>` + sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
-      updateYearDropdown('ALL');
+      
+      // Default to a single sport/year on boot so it opens instantly
+      const defaultSport = 'MLB';
+      sportSelect.value = defaultSport;
+      updateYearDropdown(defaultSport);
+      
+      const yearSelect = document.getElementById('yearSelect');
+      const defaultYear = Object.keys(availableDatasets[defaultSport] || {})[0] || '2025';
+      yearSelect.value = defaultYear;
 
       sportSelect.addEventListener('change', (e) => {
         updateYearDropdown(e.target.value);
@@ -3222,16 +3229,22 @@
       const aggregatedConfig = {};
       const aggregatedEarnings = {};
 
-      for (const item of filesToLoad) {
-        const key = `${item.sport}_${item.year}`;
-        const data = await fetchDatasetWithPersistentCache(key, item.path);
+      // Load all files concurrently instead of waiting for them one-by-one
+      const loadedData = await Promise.all(
+        filesToLoad.map(async (item) => {
+          const key = `${item.sport}_${item.year}`;
+          const data = await fetchDatasetWithPersistentCache(key, item.path);
+          return { item, data };
+        })
+      );
+
+      for (const { item, data } of loadedData) {
         if (!data) continue;
 
         const config = data.player_config || {};
         const earnings = data.player_earnings || {};
 
         for (const [pid, pInfo] of Object.entries(config)) {
-          // Each player-season pair is treated as its own independent card entry
           const seasonKey = `${item.sport}_${item.year}_${pid}`;
           const pEarnings = earnings[pid] || { total_earnings: 0 };
 
