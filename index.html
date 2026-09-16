@@ -2814,66 +2814,6 @@
       switchOtdSubView('roster');
       renderOtdView();
     }
-
-      // 3. Greedily fill around the user's base cards
-      let available = candidateList;
-      const fillerRoster = [];
-
-      while (available.length > 0) {
-        let bestCard = null;
-        let maxMarginalGain = 0;
-        const next = [];
-
-        for (const card of available) {
-          if (chosenKeys.has(card.cardKey)) continue;
-          let gain = 0;
-          for (const mmdd of Object.keys(card.dayMap)) {
-            const curRax = evaluateDayRax(mmdd);
-            const newRax = evaluateDayRax(mmdd, card.dayMap[mmdd]);
-            if (newRax > curRax) gain += (newRax - curRax);
-          }
-
-          if (gain > 0) {
-            next.push(card);
-            if (gain > maxMarginalGain) {
-              maxMarginalGain = gain;
-              bestCard = card;
-            }
-          }
-        }
-
-        if (!bestCard || maxMarginalGain <= 0) break;
-
-        chosenKeys.add(bestCard.cardKey);
-        bestCard.marginal_otd_rax = maxMarginalGain;
-        bestCard.overlap_pct = Math.max(0, Math.round((1 - (maxMarginalGain / bestCard.total_earnings)) * 100));
-
-        for (const [mmdd, item] of Object.entries(bestCard.dayMap)) {
-          if (!activeDailyLineup[mmdd]) activeDailyLineup[mmdd] = [];
-          activeDailyLineup[mmdd].push(item);
-        }
-
-        fillerRoster.push(bestCard);
-        available = next;
-      }
-
-      optimalOtdRoster = lockedRoster.concat(fillerRoster);
-      optimalOtdDailyMap = activeDailyLineup;
-
-      let annualSum = 0;
-      for (let m = 1; m <= 12; m++) {
-        const totalDays = new Date(2024, m, 0).getDate();
-        const mStr = String(m).padStart(2, '0');
-        for (let d = 1; d <= totalDays; d++) {
-          const dStr = String(d).padStart(2, '0');
-          annualSum += evaluateDailyClaims(activeDailyLineup[`${mStr}-${dStr}`] || []).totalRax;
-        }
-      }
-      otdAnnualProjectedRax = annualSum;
-
-      switchOtdSubView('roster');
-      renderOtdView();
-    }
     
     function switchMainView(view) {
       currentMainView = view;
